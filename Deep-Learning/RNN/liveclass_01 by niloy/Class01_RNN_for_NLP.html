@@ -1,0 +1,2889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class 01 — RNN for NLP | Programming Hero</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c3aed'/%3E%3Crect x='13' y='15' width='38' height='28' rx='4' fill='white'/%3E%3Cpath d='M18 49h28M32 43v6' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M21 24h22M21 32h14' stroke='%237c3aed' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-light: #f0ebf8;
+    --bg-lighter: #e4d9f2;
+    --ink: #160820;
+    --ink-soft: #2e1065;
+    --muted: #5b6079;
+    --muted-dk: #8c90a6;
+    --line: #dbe2f0;
+
+    --ph-magenta: #7c3aed;
+    --ph-purple: #4c1d95;
+    --ph-violet: #6d28d9;
+    --ph-accent: #5b21b6;
+    --ph-pink: #8b5cf6;
+
+    --surface-glass: rgba(255, 255, 255, 0.92);
+    --shadow-soft: 0 2px 10px rgba(26, 10, 36, 0.06);
+    --shadow-medium: 0 6px 18px rgba(26, 10, 36, 0.10);
+    --code-bg: #160820;
+    --code-fg: #f3e8ff;
+
+    --header-h: 56px;
+    --sidebar-w: 300px;
+    --sidebar-w-collapsed: 56px;
+    --content-scale: 1.1;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0d0614;
+    --bg-light: #1a0a24;
+    --bg-lighter: #2d1540;
+    --ink: #f3e8ff;
+    --ink-soft: #d8b4fe;
+    --muted: #a78bba;
+    --muted-dk: #7c6594;
+    --line: #3d2654;
+    --ph-magenta: #a78bfa;
+    --ph-purple: #8b5cf6;
+    --ph-violet: #7c3aed;
+    --ph-accent: #6d28d9;
+    --ph-pink: #9333ea;
+    --surface-glass: rgba(26, 10, 36, 0.92);
+    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.45);
+    --shadow-medium: 0 6px 18px rgba(0, 0, 0, 0.55);
+    --code-bg: #140820;
+    --code-fg: #f3e8ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  code, pre, .mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+
+  .gp-header .h-logo {
+    flex: 0 0 auto;
+    height: 38px;
+    width: auto;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+
+  .intro-brand {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 20px;
+    padding: 32px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #12071c 0%, #3b0764 50%, #6d28d9 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intro-brand::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.12), transparent 55%);
+    pointer-events: none;
+  }
+
+  .intro-brand-logo {
+    flex: 0 0 auto;
+    width: 120px;
+    height: 120px;
+    border-radius: 20px;
+    object-fit: cover;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    position: relative;
+    z-index: 1;
+  }
+
+  .intro-brand-text {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+  }
+
+  .intro-brand-text .brand-name {
+    font-size: 2em;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+
+  .intro-brand-text .brand-tagline {
+    font-size: 1.15em;
+    opacity: 0.92;
+    line-height: 1.55;
+    font-weight: 400;
+  }
+
+  .outline-list {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .outline-item {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 16px 18px;
+    background: var(--bg-light);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--ph-magenta);
+    border-radius: 10px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .outline-item:nth-child(2) { border-left-color: var(--ph-purple); }
+  .outline-item:nth-child(3) { border-left-color: var(--ph-violet); }
+  .outline-item:nth-child(4) { border-left-color: var(--ph-accent); }
+  .outline-item:nth-child(5) { border-left-color: var(--ph-pink); }
+  .outline-item:nth-child(6) { border-left-color: var(--ph-magenta); }
+
+  .outline-num {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--ph-purple), var(--ph-magenta));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.2em;
+  }
+
+  .outline-body { min-width: 0; }
+
+  .outline-title {
+    font-weight: 800;
+    color: var(--ink);
+    font-size: 1.12em;
+    margin-bottom: 4px;
+  }
+
+  .outline-desc {
+    color: var(--muted);
+    font-size: 1.12em;
+    line-height: 1.45;
+  }
+
+  .conclusion-hero {
+    margin-top: 18px;
+    padding: 28px;
+    border-radius: 14px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(76, 29, 149, 0.08), rgba(124, 58, 237, 0.06));
+    border: 1px solid var(--line);
+  }
+
+  .conclusion-hero .ch-logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+    margin: 0 auto 14px;
+    object-fit: cover;
+  }
+
+  .conclusion-hero .ch-title {
+    font-size: 1.48em;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .conclusion-hero .ch-sub {
+    color: var(--muted);
+    font-size: 1.1em;
+    line-height: 1.55;
+  }
+
+
+  .gp-header {
+    flex: 0 0 auto;
+    height: var(--header-h);
+    padding: 0 24px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    z-index: 90;
+  }
+
+  .gp-header .h-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .gp-header .h-tag {
+    font-size: 0.76rem;
+    color: var(--ph-magenta);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 800;
+    background: rgba(124, 58, 237, 0.10);
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .gp-header h1 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+
+  .gp-header h1 .hl {
+    background: linear-gradient(90deg, var(--ph-magenta), var(--ph-purple));
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+  }
+
+  .gp-header h1.title-fade {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  .gp-header .h-progress {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+  }
+
+  .hp-bar {
+    width: 120px;
+    height: 6px;
+    background: var(--bg-lighter);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+
+  .hp-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--ph-magenta), var(--ph-purple));
+    transition: width 0.4s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  .gp-header .h-meta {
+    font-size: 14px;
+    color: var(--muted-dk);
+    font-style: italic;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .layout {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    min-height: 0;
+    position: relative;
+  }
+
+  .layout.collapsed {
+    grid-template-columns: var(--sidebar-w-collapsed) 1fr;
+  }
+
+  .sidebar {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border-right: 1px solid var(--line);
+    background: var(--bg-light);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sb-head {
+    flex: 0 0 auto;
+    padding: 14px 14px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .sb-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--ph-purple);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sb-collapse {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink-soft);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, transform 0.2s ease, color 0.15s ease;
+  }
+
+  .sb-collapse:hover { background: var(--bg-lighter); color: var(--ph-magenta); }
+  .sb-collapse svg { width: 14px; height: 14px; transition: transform 0.25s ease; }
+  .layout.collapsed .sb-collapse svg { transform: rotate(180deg); }
+
+  .sb-progress {
+    flex: 0 0 auto;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sbp-bar {
+    flex: 1 1 auto;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--bg-lighter);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+
+  .sbp-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--ph-magenta), var(--ph-accent));
+    transition: width 0.4s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  .sbp-text {
+    flex-shrink: 0;
+    color: var(--ph-purple);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .step-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 12px 12px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .step-btn {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    font: inherit;
+    text-align: left;
+    width: 100%;
+  }
+
+  .step-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-soft);
+    border-color: var(--ph-magenta);
+  }
+
+  .sb-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--muted-dk);
+    background: var(--bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.25s ease;
+  }
+
+  .sb-check svg {
+    width: 12px;
+    height: 12px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(.5, 1.5, .6, 1);
+  }
+
+  .step-btn.done .sb-check {
+    background: var(--ph-accent);
+    border-color: var(--ph-accent);
+  }
+
+  .step-btn.done .sb-check svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .sb-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .sb-num {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--ph-magenta);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .sb-label {
+    font-size: 1.02rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .step-btn.active {
+    background: linear-gradient(180deg, rgba(124, 58, 237, 0.10), rgba(76, 29, 149, 0.04));
+    border-color: var(--ph-magenta);
+    box-shadow: var(--shadow-medium);
+  }
+
+  .layout.collapsed .sb-title,
+  .layout.collapsed .sbp-bar,
+  .layout.collapsed .sbp-text,
+  .layout.collapsed .sb-content,
+  .layout.collapsed .sb-resize {
+    display: none;
+  }
+
+  .layout.collapsed .sb-head { padding: 14px 6px 10px; justify-content: center; }
+  .layout.collapsed .sb-progress { padding: 10px 8px; justify-content: center; }
+  .layout.collapsed .step-list { padding: 12px 6px 24px; align-items: center; }
+  .layout.collapsed .step-btn { grid-template-columns: 1fr; justify-items: center; padding: 8px; width: 40px; }
+
+  .sb-resize {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 100%;
+    cursor: ew-resize;
+    z-index: 80;
+    background: transparent;
+  }
+
+  .sb-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 36px;
+    border-radius: 2px;
+    background: var(--line);
+    opacity: 0;
+    transition: opacity 0.18s ease, background 0.18s ease;
+  }
+
+  .sb-resize:hover::after,
+  .sb-resize.dragging::after {
+    opacity: 1;
+    background: var(--ph-magenta);
+  }
+
+  body.resizing { user-select: none; cursor: ew-resize; }
+  body.resizing * { cursor: ew-resize !important; }
+
+  .content {
+    position: relative;
+    height: 100%;
+    overflow-y: auto;
+    padding: 40px 60px 140px;
+    font-size: calc(1rem * var(--content-scale));
+  }
+
+  .content-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .page {
+    display: none;
+    animation: page-in 0.4s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  .page.active { display: block; }
+
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(76, 29, 149, 0.10);
+    color: var(--ph-purple);
+    border-left: 3px solid var(--ph-purple);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.86em;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+  }
+
+  .step-pill.blue { background: rgba(124, 58, 237, 0.10); color: var(--ph-magenta); border-color: var(--ph-magenta); }
+  .step-pill.sky { background: rgba(109, 40, 217, 0.15); color: var(--ph-violet); border-color: var(--ph-violet); }
+  .step-pill.green { background: rgba(91, 33, 182, 0.12); color: var(--ph-accent); border-color: var(--ph-accent); }
+  .step-pill.amber { background: rgba(139, 92, 246, 0.12); color: var(--ph-pink); border-color: var(--ph-pink); }
+
+  .page h2 {
+    font-size: 2.25em;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .page h2 .accent-line {
+    display: block;
+    width: 92px;
+    height: 5px;
+    margin-top: 12px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--ph-magenta), var(--ph-purple));
+  }
+
+  .page h3 {
+    font-size: 1.25em;
+    font-weight: 700;
+    margin-top: 22px;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+
+  .page h3 .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ph-magenta);
+    margin-right: 9px;
+    vertical-align: middle;
+  }
+
+  .info-text {
+    font-size: 1.14em;
+    color: var(--muted);
+    line-height: 1.65;
+    margin: 10px 0 8px;
+  }
+
+  .info-text strong { color: var(--ink); }
+
+  .page code,
+  .page li code {
+    background: var(--bg-light);
+    border: 1px solid var(--line);
+    color: var(--ph-magenta);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 1.12em;
+    font-weight: 600;
+  }
+
+  .page ol,
+  .page ul {
+    margin: 8px 0 8px 22px;
+    color: var(--muted);
+    line-height: 1.65;
+    font-size: 1.12em;
+  }
+
+  .page ul.bare {
+    list-style: none;
+    margin-left: 0;
+  }
+
+  .page ul.bare li {
+    padding-left: 22px;
+    position: relative;
+    margin-bottom: 6px;
+  }
+
+  .page ul.bare li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 9px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ph-magenta);
+  }
+
+  .hero-card {
+    margin-top: 14px;
+    padding: 28px 24px;
+    background: var(--bg-light);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 15% 25%, rgba(124, 58, 237, 0.10), transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(76, 29, 149, 0.08), transparent 50%);
+    pointer-events: none;
+  }
+
+  .template-map {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .map-node {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--ph-magenta);
+    border-radius: 10px;
+    padding: 18px;
+    min-height: 128px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .map-node:nth-child(2) { border-top-color: var(--ph-purple); }
+  .map-node:nth-child(3) { border-top-color: var(--ph-violet); }
+  .map-node:nth-child(4) { border-top-color: var(--ph-accent); }
+
+  .map-kicker {
+    font-size: 0.76em;
+    color: var(--ph-magenta);
+    text-transform: uppercase;
+    letter-spacing: 1.6px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .map-title {
+    color: var(--ink);
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+
+  .map-copy {
+    color: var(--muted);
+    font-size: 1.12em;
+    line-height: 1.5;
+  }
+
+  .grid-2,
+  .grid-3 {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+  .mini-card {
+    background: var(--bg-light);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--ph-magenta);
+    padding: 16px 18px;
+    border-radius: 8px;
+  }
+
+  .mini-card:nth-child(2) { border-top-color: var(--ph-purple); }
+  .mini-card:nth-child(3) { border-top-color: var(--ph-violet); }
+
+  .mc-label {
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 800;
+    color: var(--ph-magenta);
+    margin-bottom: 6px;
+  }
+
+  .mc-text {
+    font-size: 1.03em;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .callout {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.07), rgba(76, 29, 149, 0.04));
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--ph-magenta);
+    border-radius: 6px;
+    color: var(--ink-soft);
+    font-size: 1.08em;
+    line-height: 1.55;
+  }
+
+  .callout.ok {
+    background: linear-gradient(90deg, rgba(91, 33, 182, 0.10), rgba(91, 33, 182, 0.04));
+    border-left-color: var(--ph-accent);
+  }
+
+  .callout.warn {
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.10), rgba(139, 92, 246, 0.04));
+    border-left-color: var(--ph-pink);
+  }
+
+  /* ===== Highlighted worked-example block ===== */
+  .example {
+    margin-top: 16px;
+    padding: 14px 18px 16px;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.14), rgba(245, 158, 11, 0.05));
+    border: 1px solid rgba(245, 158, 11, 0.42);
+    border-left: 5px solid #f59e0b;
+    border-radius: 10px;
+    color: var(--ink-soft);
+    font-size: 1.06em;
+    line-height: 1.6;
+  }
+
+  [data-theme="dark"] .example {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.16), rgba(251, 191, 36, 0.06));
+    border-color: rgba(251, 191, 36, 0.40);
+    border-left-color: #fbbf24;
+  }
+
+  .example-h {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: #fff;
+    background: #d97706;
+    padding: 3px 12px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+
+  .example-h::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #fde68a;
+  }
+
+  .example strong, .example b { color: var(--ink); }
+
+  .example ul { margin: 8px 0 0; padding-left: 0; list-style: none; }
+  .example ul li { position: relative; padding-left: 20px; margin: 6px 0; }
+  .example ul li::before {
+    content: '';
+    position: absolute;
+    left: 3px; top: 0.6em;
+    width: 7px; height: 7px;
+    border-radius: 2px;
+    background: #f59e0b;
+  }
+
+  pre.eg {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 11px 14px;
+    margin: 10px 0 4px;
+    font-size: 0.9em;
+    color: var(--ink);
+    line-height: 1.75;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  pre.eg .res { color: #b45309; font-weight: 700; }
+  [data-theme="dark"] pre.eg .res { color: #fbbf24; }
+  pre.eg .cmt { color: var(--muted-dk); }
+
+  /* ===== Topics highlight box (intro) ===== */
+  .topics-box {
+    margin-top: 18px;
+    padding: 16px 20px 18px;
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.10), rgba(76, 29, 149, 0.04));
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--ph-magenta);
+    border-radius: 10px;
+  }
+
+  .topics-box .topics-h {
+    font-size: 1em;
+    font-weight: 800;
+    color: var(--ph-purple);
+    letter-spacing: 0.4px;
+    margin-bottom: 10px;
+  }
+
+  [data-theme="dark"] .topics-box .topics-h { color: var(--ink-soft); }
+
+  .topics-box .topics-list { margin: 0; padding-left: 0; list-style: none; }
+  .topics-box .topics-list li {
+    position: relative;
+    padding-left: 24px;
+    margin: 8px 0;
+    font-size: 1.12em;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .topics-box .topics-list li::before {
+    content: '';
+    position: absolute;
+    left: 5px; top: 0.5em;
+    width: 9px; height: 9px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, var(--ph-magenta), var(--ph-purple));
+  }
+
+  .codeblock-wrap {
+    margin-top: 14px;
+    position: relative;
+  }
+
+  .cb-label {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--bg);
+    color: var(--ph-purple);
+    border: 1px solid var(--line);
+    padding: 2px 10px;
+    font-size: 0.7em;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    z-index: 2;
+  }
+
+  .codeblock {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 24px 26px 22px;
+    border-radius: 8px;
+    font-size: 1.12em;
+    line-height: 1.65;
+    border: 1px solid var(--line);
+    box-shadow: 0 6px 18px rgba(26, 10, 36, 0.10);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .cm-comment { color: #8c90a6; font-style: italic; }
+  .cm-key { color: #c4b5fd; font-weight: 700; }
+  .cm-str { color: #ddd6fe; }
+  .cm-num { color: #a78bfa; }
+
+  .page-footer {
+    margin-top: 40px;
+    padding-top: 22px;
+    border-top: 1px dashed var(--line);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .mark-done {
+    flex: 1 1 auto;
+    min-width: 220px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    border: 1.5px solid var(--ph-accent);
+    background: var(--bg);
+    color: var(--ph-accent);
+    font: inherit;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+  }
+
+  .mark-done:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(91, 33, 182, 0.22);
+    background: rgba(91, 33, 182, 0.06);
+  }
+
+  .mark-done.done {
+    background: var(--ph-accent);
+    color: #fff;
+  }
+
+  .md-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mark-done.done .md-icon::after {
+    content: '\2713';
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 900;
+  }
+
+  .pf-nav {
+    display: inline-flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .pf-btn {
+    padding: 12px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 700;
+    font-size: 1.02rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .pf-btn:hover {
+    border-color: var(--ph-magenta);
+    background: var(--bg-light);
+    transform: translateY(-1px);
+  }
+
+  .pf-btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .pf-btn.primary {
+    background: linear-gradient(180deg, var(--ph-magenta), var(--ph-purple));
+    color: #fff;
+    border-color: var(--ph-purple);
+  }
+
+  .bl-toolbar {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 150;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ===== Laser pointer ===== */
+  .laser-toggle {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-glass);
+    box-shadow: var(--shadow-soft);
+    color: var(--ph-purple);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    line-height: 1;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .laser-toggle svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
+
+  .laser-toggle[aria-pressed="true"] {
+    color: #fff;
+    background: linear-gradient(180deg, #ef4444, #b91c1c);
+    border-color: #b91c1c;
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.45), 0 6px 18px rgba(239, 68, 68, 0.45);
+  }
+
+  /* The glowing laser dot that follows the cursor */
+  #laserDot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #ffffff 0%, #ff6b6b 30%, #ff1a1a 58%, rgba(255, 26, 26, 0) 72%);
+    box-shadow: 0 0 12px 4px rgba(255, 0, 0, 0.55), 0 0 32px 12px rgba(255, 45, 45, 0.32);
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    will-change: transform;
+    transform: translate(-100px, -100px);
+  }
+
+  body.laser-active #laserDot { opacity: 1; }
+  body.laser-active main,
+  body.laser-active .gp-header { cursor: none; }
+
+  .theme-toggle,
+  .font-control {
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-glass);
+    box-shadow: var(--shadow-soft);
+    color: var(--ph-purple);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .tt-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1;
+  }
+
+  .tt-option svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+  }
+
+  .theme-toggle[aria-pressed="false"] .tt-option.light { color: var(--ph-magenta); }
+  .theme-toggle[aria-pressed="true"] .tt-option.dark { color: #ffd773; }
+
+  .tt-track {
+    position: relative;
+    width: 36px;
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(124, 58, 237, 0.18);
+    transition: background 0.25s ease;
+    flex: 0 0 auto;
+  }
+
+  .tt-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ph-magenta);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: left 0.28s cubic-bezier(.4, 0, .2, 1), background 0.25s ease;
+  }
+
+  .theme-toggle[aria-pressed="true"] .tt-track { background: rgba(255, 215, 115, 0.28); }
+  .theme-toggle[aria-pressed="true"] .tt-knob { left: 20px; background: #ffd773; }
+
+  .font-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  .fc-icon {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--muted);
+    line-height: 1;
+  }
+
+  .fc-icon.big { font-size: 20px; color: var(--ph-purple); }
+
+  .font-control input[type="range"] {
+    width: 110px;
+    accent-color: var(--ph-magenta);
+  }
+
+  .fc-val {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--ph-magenta);
+    min-width: 32px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .author-credit {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 130;
+    font-size: 14px;
+    color: var(--ink-soft);
+    background: var(--surface-glass);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    letter-spacing: 0.3px;
+    font-weight: 500;
+    box-shadow: var(--shadow-soft);
+    white-space: nowrap;
+  }
+
+  .author-credit a {
+    color: var(--ph-magenta);
+    text-decoration: none;
+    font-weight: 700;
+    border-bottom: 1px dashed var(--ph-magenta);
+  }
+
+  .author-credit strong {
+    color: var(--ph-purple);
+    font-weight: 700;
+  }
+
+  @media (max-width: 900px) {
+    :root { --sidebar-w: 100%; }
+    .layout, .layout.collapsed { grid-template-columns: 1fr; }
+    .sidebar {
+      height: auto;
+      max-height: 40vh;
+      border-right: none;
+      border-bottom: 1px solid var(--line);
+    }
+    .sb-resize { display: none; }
+    .content { padding: 24px 20px 160px; }
+    .gp-header { padding: 0 12px; gap: 10px; }
+    .gp-header h1 { font-size: 1.05rem; }
+    .gp-header .h-tag { font-size: 0.68rem; padding: 3px 8px; letter-spacing: 1.5px; }
+    .gp-header .h-progress,
+    .gp-header .h-meta { display: none; }
+    .grid-2,
+    .grid-3,
+    .template-map { grid-template-columns: 1fr; }
+    .intro-brand { flex-direction: column; text-align: center; }
+    .gp-header .h-logo { height: 32px; }
+    .author-credit {
+      font-size: 14px;
+      padding: 6px 12px;
+      max-width: calc(100vw - 32px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bl-toolbar { left: 12px; bottom: 12px; gap: 6px; }
+    .font-control { padding: 0 10px; }
+    .font-control input[type="range"] { width: 80px; }
+  }
+
+  /* ===== Lecture visualizations (SVG / D3 / Mermaid) ===== */
+  .viz-wrap {
+    margin-top: 18px;
+    padding: 20px 22px;
+    background: var(--bg-light);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .viz-title {
+    font-size: 0.82em;
+    font-weight: 800;
+    color: var(--ph-purple);
+    text-transform: uppercase;
+    letter-spacing: 1.6px;
+    margin-bottom: 14px;
+  }
+
+  .viz-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  .viz-cell {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+  }
+
+  .viz-cell-h {
+    font-size: 0.78em;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--ph-magenta);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  .viz-svg, .viz-svg-full {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .viz-svg text, .viz-svg-full text {
+    fill: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+  }
+
+  .viz-canvas {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px;
+    margin-top: 6px;
+  }
+
+  .viz-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 14px;
+  }
+
+  .viz-btn {
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--ph-purple);
+    background: linear-gradient(180deg, var(--ph-magenta), var(--ph-purple));
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .viz-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(124, 58, 237, 0.3); }
+  .viz-btn.ghost { background: var(--bg); color: var(--ph-purple); }
+  .viz-btn.ghost:hover { background: var(--bg-lighter); }
+
+  .viz-legend {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 0.84em;
+    color: var(--muted);
+    margin-top: 12px;
+    font-weight: 600;
+  }
+
+  .viz-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .viz-dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+  .viz-cap {
+    font-size: 0.92em;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.55;
+  }
+
+  .viz-slider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    font-size: 0.86em;
+    color: var(--muted);
+    font-weight: 600;
+    flex-wrap: wrap;
+  }
+
+  .viz-slider input { accent-color: var(--ph-magenta); flex: 1 1 200px; max-width: 280px; }
+  .viz-slider .sv-val { color: var(--ph-magenta); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  /* Inline SVG node/edge styling */
+  .edge { stroke: var(--ph-purple); stroke-width: 2; fill: none; }
+  .edge-x { stroke: var(--ph-magenta); stroke-width: 2; fill: none; }
+  .edge-y { stroke: var(--ph-violet); stroke-width: 2; fill: none; }
+  .edge-recur { stroke: var(--ph-magenta); stroke-width: 2.5; fill: none; stroke-dasharray: 7 6; }
+  .node-x { fill: rgba(124, 58, 237, 0.12); stroke: var(--ph-magenta); stroke-width: 1.6; }
+  .node-h { fill: rgba(76, 29, 149, 0.16); stroke: var(--ph-purple); stroke-width: 1.8; }
+  .node-y { fill: rgba(109, 40, 217, 0.12); stroke: var(--ph-violet); stroke-width: 1.6; }
+  .node-cell { fill: rgba(124, 58, 237, 0.10); stroke: var(--ph-purple); stroke-width: 2.4; }
+
+  @keyframes dashflow { to { stroke-dashoffset: -130; } }
+  .edge-recur.anim { animation: dashflow 1.8s linear infinite; }
+
+  /* Equation panel */
+  .eqn {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--ph-magenta);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 14px;
+    color: var(--ink-soft);
+    font-size: 1.02em;
+    line-height: 1.9;
+    overflow-x: auto;
+  }
+
+  .eqn .v { color: var(--ph-magenta); font-weight: 700; }
+  .eqn .c { color: var(--muted-dk); }
+
+  /* Mermaid */
+  .mermaid-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .mermaid-card {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 14px 6px;
+  }
+
+  .mermaid-card .mm-h {
+    font-size: 0.78em;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--ph-magenta);
+    margin-bottom: 6px;
+  }
+
+  pre.mermaid {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 4px;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    white-space: normal;
+    overflow-x: auto;
+  }
+
+  pre.mermaid svg { max-width: 100%; height: auto; }
+
+  @media (max-width: 900px) {
+    .viz-row { grid-template-columns: 1fr; }
+    .mermaid-grid { grid-template-columns: 1fr; }
+  }
+
+</style>
+</head>
+<body>
+
+<header class="gp-header">
+  <img class="h-logo" src="data:image/jpeg;base64,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" alt="Programming Hero logo">
+  <div class="h-left">
+    <span class="h-tag" id="headerTag">Intro</span>
+    <h1 id="headerTitle">RNN for NLP - <span class="hl">Class 01</span></h1>
+  </div>
+  <div class="h-progress" aria-label="Slide progress">
+    <span class="hp-bar"><span class="hp-fill" id="headerProgressFill"></span></span>
+    <span id="headerProgressText">1 / 9</span>
+  </div>
+  <span class="h-meta">Programming Hero — Deep Learning / Class 01</span>
+</header>
+
+<div class="layout" id="layout">
+  <aside class="sidebar" id="sidebar" aria-label="Slide sections">
+    <div class="sb-head">
+      <span class="sb-title">Slide Sections</span>
+      <button class="sb-collapse" id="sbCollapse" type="button" aria-label="Collapse or expand sidebar" title="Collapse or expand sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 6 9 12 15 18"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <div class="sb-progress" aria-label="Sections completed">
+      <span class="sbp-bar"><span class="sbp-fill" id="sidebarProgressFill"></span></span>
+      <span class="sbp-text" id="sidebarProgressText">0 / 8</span>
+    </div>
+
+                <nav class="step-list" id="stepNav">
+      <button class="step-btn" data-target="intro" data-trackable="false" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Intro</span>
+          <span class="sb-label">Session overview</span>
+        </span>
+      </button>
+
+      <button class="step-btn" data-target="outline" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Outline</span>
+          <span class="sb-label">Plan &amp; agenda</span>
+        </span>
+      </button>
+
+      <button class="step-btn" data-target="step1" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Topic 01</span>
+          <span class="sb-label">Why RNN for NLP</span>
+        </span>
+      </button>
+
+      <button class="step-btn" data-target="step2" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Topic 02</span>
+          <span class="sb-label">The RNN cell</span>
+        </span>
+      </button>
+
+      <button class="step-btn" data-target="step3" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Topic 03</span>
+          <span class="sb-label">Unrolling &amp; types</span>
+        </span>
+      </button>
+
+      <button class="step-btn" data-target="step4" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Topic 04</span>
+          <span class="sb-label">Forward propagation</span>
+        </span>
+      </button>
+
+      <button class="step-btn" data-target="step5" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Topic 05</span>
+          <span class="sb-label">Backward (BPTT)</span>
+        </span>
+      </button>
+
+      <button class="step-btn" data-target="step6" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Topic 06</span>
+          <span class="sb-label">PyTorch code</span>
+        </span>
+      </button>
+
+      <button class="step-btn" data-target="conclusion" type="button">
+        <span class="sb-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="sb-content">
+          <span class="sb-num">Conclusion</span>
+          <span class="sb-label">Recap &amp; next steps</span>
+        </span>
+      </button>
+    </nav>
+
+    <div class="sb-resize" id="sbResize" title="Drag to resize sidebar"></div>
+  </aside>
+
+  <main class="content" id="contentScroll">
+    <div class="content-inner">
+                        <section class="page" id="intro" data-tag="Intro" data-title='RNN for NLP - <span class="hl">Class 01</span>'>
+        <span class="step-pill amber">Intro</span>
+        <h2>Recurrent Neural Networks for Natural Language Processing<span class="accent-line"></span></h2>
+        <p class="info-text">
+          In this class we explore how <strong>Recurrent Neural Networks (RNNs)</strong> process sequential text data.
+          You will learn why RNNs suit NLP, how the architecture carries memory through time, and how to implement
+          <strong>forward propagation</strong> and <strong>backward propagation (BPTT)</strong> step by step.
+        </p>
+
+        <div class="topics-box">
+          <div class="topics-h">📚 Topics</div>
+          <ul class="topics-list">
+            <li>RNN for NLP</li>
+            <li>Forward Propagation and Backward Propagation of RNN</li>
+          </ul>
+        </div>
+
+        <div class="intro-brand">
+          <img class="intro-brand-logo" src="data:image/jpeg;base64,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" alt="Programming Hero">
+          <div class="intro-brand-text">
+            <div class="brand-name">Programming Hero</div>
+            <div class="brand-tagline">Let's code your career! Today: understand RNNs — the foundation of modern sequence modeling in NLP.</div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="mini-card">
+            <div class="mc-label">Audience</div>
+            <div class="mc-text">Learners with basic neural network knowledge (layers, weights, activations) who want to understand sequence models.</div>
+          </div>
+          <div class="mini-card">
+            <div class="mc-label">Outcome</div>
+            <div class="mc-text">Explain RNN architecture, compute a forward pass, and trace how gradients flow backward through time.</div>
+          </div>
+          <div class="mini-card">
+            <div class="mc-label">Prerequisites</div>
+            <div class="mc-text">Linear algebra basics, feedforward networks, and Python/NumPy. PyTorch helpful but not required.</div>
+          </div>
+        </div>
+
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done style="visibility:hidden;"></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev" disabled>&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next">Start &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="outline" data-tag="Outline" data-title='Session <span class="hl">Agenda</span>'>
+        <span class="step-pill blue">Outline</span>
+        <h2>What we will cover today<span class="accent-line"></span></h2>
+        <p class="info-text">
+          We move from motivation to architecture to mechanics, then to a working implementation — with animated diagrams at each step.
+        </p>
+
+        <div class="outline-list">
+          <div class="outline-item">
+            <div class="outline-num">01</div>
+            <div class="outline-body">
+              <div class="outline-title">Why RNN for NLP</div>
+              <div class="outline-desc">Why language is sequential and how recurrence differs from feedforward networks.</div>
+            </div>
+          </div>
+          <div class="outline-item">
+            <div class="outline-num">02</div>
+            <div class="outline-body">
+              <div class="outline-title">The RNN Cell</div>
+              <div class="outline-desc">Inputs, hidden state, outputs, shared weights, and the recurrent feedback loop.</div>
+            </div>
+          </div>
+          <div class="outline-item">
+            <div class="outline-num">03</div>
+            <div class="outline-body">
+              <div class="outline-title">Unrolling Through Time &amp; RNN Types</div>
+              <div class="outline-desc">Unfold a sequence into a computation graph; many-to-one, one-to-many, seq2seq.</div>
+            </div>
+          </div>
+          <div class="outline-item">
+            <div class="outline-num">04</div>
+            <div class="outline-body">
+              <div class="outline-title">Forward Propagation</div>
+              <div class="outline-desc">Hidden/output equations and an animated left-to-right pass with code.</div>
+            </div>
+          </div>
+          <div class="outline-item">
+            <div class="outline-num">05</div>
+            <div class="outline-body">
+              <div class="outline-title">Backward Propagation (BPTT)</div>
+              <div class="outline-desc">Chain rule through time, the vanishing-gradient problem, and gradient code.</div>
+            </div>
+          </div>
+          <div class="outline-item">
+            <div class="outline-num">06</div>
+            <div class="outline-body">
+              <div class="outline-title">PyTorch Implementation</div>
+              <div class="outline-desc">Build a real RNN classifier and connect theory to <code>nn.RNN</code>.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done><span class="md-icon"></span><span class="md-label">Mark this step as done</span></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev">&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next">Next &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="step1" data-tag="Topic 01" data-title='Why RNN for <span class="hl">NLP</span>'>
+        <span class="step-pill">Topic 01</span>
+        <h2>Why RNNs for Natural Language Processing?<span class="accent-line"></span></h2>
+        <p class="info-text">
+          Language is inherently <strong>sequential</strong>: a word's meaning depends on the words around it.
+          A feedforward network treats each input independently and has no memory of order — RNNs add a hidden
+          state that carries context from one token to the next.
+        </p>
+
+        <div class="viz-wrap">
+          <div class="viz-title">Feedforward vs Recurrent — the key difference</div>
+          <div class="viz-row">
+            <div class="viz-cell">
+              <div class="viz-cell-h">Feedforward network</div>
+              <svg class="viz-svg" viewBox="0 0 340 230" role="img" aria-label="Feedforward network schematic">
+                <defs>
+                  <marker id="ffArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#6d28d9"></path>
+                  </marker>
+                </defs>
+                <rect class="node-x" x="24" y="40" width="74" height="34" rx="8"></rect>
+                <text x="61" y="62" text-anchor="middle" font-weight="700">x&#8321;</text>
+                <rect class="node-x" x="24" y="98" width="74" height="34" rx="8"></rect>
+                <text x="61" y="120" text-anchor="middle" font-weight="700">x&#8322;</text>
+                <rect class="node-x" x="24" y="156" width="74" height="34" rx="8"></rect>
+                <text x="61" y="178" text-anchor="middle" font-weight="700">x&#8323;</text>
+                <rect class="node-h" x="146" y="84" width="78" height="62" rx="10"></rect>
+                <text x="185" y="112" text-anchor="middle" font-weight="700">Dense</text>
+                <text x="185" y="130" text-anchor="middle" font-size="11" opacity="0.7">layer</text>
+                <rect class="node-y" x="262" y="98" width="62" height="34" rx="8"></rect>
+                <text x="293" y="120" text-anchor="middle" font-weight="700">&#375;</text>
+                <line class="edge" x1="98" y1="57" x2="146" y2="100" marker-end="url(#ffArr)"></line>
+                <line class="edge" x1="98" y1="115" x2="146" y2="115" marker-end="url(#ffArr)"></line>
+                <line class="edge" x1="98" y1="173" x2="146" y2="130" marker-end="url(#ffArr)"></line>
+                <line class="edge" x1="224" y1="115" x2="262" y2="115" marker-end="url(#ffArr)"></line>
+                <text x="170" y="218" text-anchor="middle" font-size="12" opacity="0.75">No memory — order ignored</text>
+              </svg>
+            </div>
+            <div class="viz-cell">
+              <div class="viz-cell-h">Recurrent network</div>
+              <svg class="viz-svg" viewBox="0 0 340 230" role="img" aria-label="Recurrent network schematic">
+                <defs>
+                  <marker id="rnArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#6d28d9"></path>
+                  </marker>
+                  <marker id="rnArrM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"></path>
+                  </marker>
+                </defs>
+                <rect class="node-x" x="24" y="98" width="74" height="34" rx="8"></rect>
+                <text x="61" y="120" text-anchor="middle" font-weight="700">x&#8348;</text>
+                <rect class="node-h" x="146" y="84" width="78" height="62" rx="10"></rect>
+                <text x="185" y="112" text-anchor="middle" font-weight="700">RNN</text>
+                <text x="185" y="130" text-anchor="middle" font-size="12" opacity="0.8">h&#8348;</text>
+                <rect class="node-y" x="262" y="98" width="62" height="34" rx="8"></rect>
+                <text x="293" y="120" text-anchor="middle" font-weight="700">&#375;&#8348;</text>
+                <line class="edge" x1="98" y1="115" x2="146" y2="115" marker-end="url(#rnArr)"></line>
+                <line class="edge" x1="224" y1="115" x2="262" y2="115" marker-end="url(#rnArr)"></line>
+                <path class="edge-recur anim" d="M165,84 C150,52 220,52 205,84" marker-end="url(#rnArrM)"></path>
+                <text x="185" y="44" text-anchor="middle" font-size="11" fill="#7c3aed" font-weight="700">memory</text>
+                <text x="170" y="218" text-anchor="middle" font-size="12" opacity="0.75">Hidden state loops back — keeps context</text>
+              </svg>
+            </div>
+          </div>
+          <div class="viz-cap">The recurrent edge (animated) is the whole idea: the hidden state feeds back so the network "remembers" earlier tokens.</div>
+        </div>
+
+        <h3><span class="dot"></span>Common NLP tasks with RNNs</h3>
+        <ul class="bare">
+          <li><strong>Language modeling</strong> — predict the next word: P(w<sub>t</sub> | w<sub>1</sub>, …, w<sub>t−1</sub>)</li>
+          <li><strong>Text classification</strong> — sentiment analysis, spam detection, intent recognition</li>
+          <li><strong>Sequence labeling</strong> — part-of-speech tagging, named entity recognition (NER)</li>
+          <li><strong>Machine translation</strong> — encoder RNN reads source; decoder RNN generates target (seq2seq)</li>
+        </ul>
+
+        <div class="example">
+          <div class="example-h">Example — why order matters</div>
+          A bag-of-words or feedforward model sees the same tokens and cannot tell these apart; an RNN reads them <em>in order</em> and keeps context:
+          <ul>
+            <li><code>"dog bites man"</code> vs <code>"man bites dog"</code> — identical words, opposite meaning.</li>
+            <li>Context resolves ambiguity: "I deposited cash at the <strong>bank</strong>" vs "we sat on the river <strong>bank</strong>".</li>
+            <li>Long-range agreement: "The <strong>keys</strong> that were on the table <strong>are</strong> mine" (not "is") — the verb depends on a far-away word.</li>
+          </ul>
+        </div>
+
+        <div class="callout">
+          <strong>Key idea:</strong> An RNN reuses the <em>same</em> weights at every time step and updates a hidden state that summarizes everything seen so far — ideal for variable-length text.
+        </div>
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done><span class="md-icon"></span><span class="md-label">Mark this step as done</span></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev">&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next">Next &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="step2" data-tag="Topic 02" data-title='The RNN <span class="hl">Cell</span>'>
+        <span class="step-pill blue">Topic 02</span>
+        <h2>Inside the RNN Cell<span class="accent-line"></span></h2>
+        <p class="info-text">
+          At each time step <code>t</code> the cell takes the current input <code>x<sub>t</sub></code> and the previous
+          hidden state <code>h<sub>t−1</sub></code>, mixes them with shared weight matrices, applies <code>tanh</code>,
+          and emits a new hidden state <code>h<sub>t</sub></code> (and optionally an output <code>ŷ<sub>t</sub></code>).
+        </p>
+
+        <div class="viz-wrap">
+          <div class="viz-title">Single RNN cell — inputs, output, and the recurrent feedback</div>
+          <svg class="viz-svg-full" viewBox="0 0 520 340" role="img" aria-label="Single RNN cell diagram">
+            <defs>
+              <marker id="cArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#6d28d9"></path>
+              </marker>
+              <marker id="cArrM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"></path>
+              </marker>
+            </defs>
+
+            <!-- cell body -->
+            <rect class="node-cell" x="200" y="120" width="120" height="92" rx="16"></rect>
+            <text x="260" y="158" text-anchor="middle" font-weight="800">RNN cell</text>
+            <text x="260" y="182" text-anchor="middle" font-size="12" opacity="0.8">activation: tanh</text>
+
+            <!-- x_t input from bottom -->
+            <rect class="node-x" x="230" y="262" width="60" height="40" rx="8"></rect>
+            <text x="260" y="286" text-anchor="middle" font-weight="700">x&#8348;</text>
+            <line class="edge-x" x1="260" y1="262" x2="260" y2="214" marker-end="url(#cArr)"></line>
+            <text x="298" y="244" font-size="12" fill="#7c3aed" font-weight="700">W_xh</text>
+
+            <!-- h_{t-1} from left -->
+            <text x="36" y="170" text-anchor="middle" font-weight="700">h&#8348;&#8331;&#8321;</text>
+            <line class="edge" x1="64" y1="166" x2="200" y2="166" marker-end="url(#cArr)"></line>
+            <text x="120" y="154" font-size="12" fill="#6d28d9" font-weight="700">W_hh</text>
+
+            <!-- h_t to right -->
+            <line class="edge" x1="320" y1="166" x2="470" y2="166" marker-end="url(#cArr)"></line>
+            <text x="492" y="170" text-anchor="middle" font-weight="700">h&#8348;</text>
+
+            <!-- y_t to top -->
+            <rect class="node-y" x="234" y="20" width="52" height="36" rx="8"></rect>
+            <text x="260" y="43" text-anchor="middle" font-weight="700">&#375;&#8348;</text>
+            <line class="edge-y" x1="260" y1="120" x2="260" y2="56" marker-end="url(#cArr)"></line>
+            <text x="298" y="92" font-size="12" fill="#6d28d9" font-weight="700">W_hy</text>
+
+            <!-- recurrent feedback loop -->
+            <path class="edge-recur anim" d="M450,176 C500,250 470,300 260,302 C92,302 44,296 50,182" marker-end="url(#cArrM)"></path>
+            <text x="260" y="326" text-anchor="middle" font-size="12" fill="#7c3aed" font-weight="700">recurrence: h&#8348; is fed back as h&#8348;&#8331;&#8321; at the next step</text>
+          </svg>
+          <div class="viz-legend">
+            <span><i class="viz-dot" style="background:#7c3aed"></i> input / W<sub>xh</sub></span>
+            <span><i class="viz-dot" style="background:#4c1d95"></i> hidden state h</span>
+            <span><i class="viz-dot" style="background:#6d28d9"></i> output / W<sub>hy</sub></span>
+          </div>
+        </div>
+
+        <h3><span class="dot"></span>Core equations (vanilla RNN)</h3>
+        <div class="eqn">
+          <span class="v">h&#8348;</span> = tanh( <span class="v">W_xh</span> x&#8348; + <span class="v">W_hh</span> h&#8348;&#8331;&#8321; + b&#8341; )<br>
+          <span class="v">&#375;&#8348;</span> = softmax( <span class="v">W_hy</span> h&#8348; + b&#8345; )
+        </div>
+
+        <div class="example">
+          <div class="example-h">Example — one forward step by hand</div>
+          A tiny RNN with a 2-dim hidden state, scalar input, zero biases, and h&#8320; = [0, 0]:
+<pre class="eg">W_xh = [0.5, -0.3]      W_hh = [[0.1, 0], [0, 0.1]]      x&#8321; = 1
+
+h&#8321; = tanh(W_xh&#183;x&#8321; + W_hh&#183;h&#8320;) = tanh([0.5, -0.3]) &#8776; <span class="res">[0.46, -0.29]</span>
+<span class="cmt"># next step mixes the NEW input x&#8322; with W_hh&#183;h&#8321; — that carry-over is the "memory"</span></pre>
+          <strong>Intuition:</strong> the hidden state is like a running mental summary of a sentence — each new word updates the summary instead of re-reading everything from scratch.
+        </div>
+
+        <div class="grid-2">
+          <div class="mini-card">
+            <div class="mc-label">Weight Sharing</div>
+            <div class="mc-text"><code>W_xh</code>, <code>W_hh</code>, <code>W_hy</code> are the <em>same</em> at every step — parameter count is independent of sequence length.</div>
+          </div>
+          <div class="mini-card">
+            <div class="mc-label">Hidden State = Memory</div>
+            <div class="mc-text"><code>h<sub>t</sub></code> is a fixed-size vector that compresses everything the model has read up to step <code>t</code>.</div>
+          </div>
+        </div>
+        <div class="callout ok">
+          <strong>Checkpoint:</strong> Which matrix is responsible for carrying information <em>across time</em>? (Answer: <code>W_hh</code>.)
+        </div>
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done><span class="md-icon"></span><span class="md-label">Mark this step as done</span></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev">&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next">Next &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="step3" data-tag="Topic 03" data-title='Unrolling &amp; <span class="hl">RNN Types</span>'>
+        <span class="step-pill sky">Topic 03</span>
+        <h2>Unrolling Through Time<span class="accent-line"></span></h2>
+        <p class="info-text">
+          To process a sentence, we "unroll" the single cell into one copy per token. The copies share weights and
+          are chained by the hidden state: <code>h&#8320; → h&#8321; → h&#8322; → …</code>. Press <strong>Play</strong> to build the graph step by step.
+        </p>
+
+        <div class="viz-wrap">
+          <div class="viz-title">Unrolled RNN over the sequence "The cat sat ."</div>
+          <div id="d3-unroll" class="viz-canvas"></div>
+          <div class="viz-controls">
+            <button class="viz-btn" id="btnUnrollPlay" type="button">&#9658; Play build</button>
+            <button class="viz-btn ghost" id="btnUnrollReset" type="button">Reset</button>
+          </div>
+          <div class="viz-cap">Each column is the same cell at a different time step. Horizontal arrows carry the hidden state forward; the weights are identical across all columns.</div>
+        </div>
+
+        <h3><span class="dot"></span>RNN input/output layouts in NLP</h3>
+        <div class="mermaid-grid">
+          <div class="mermaid-card">
+            <div class="mm-h">Many-to-one (sentiment)</div>
+<pre class="mermaid">
+flowchart LR
+  x1["x&#8321;"] --> h1((h&#8321;))
+  x2["x&#8322;"] --> h2((h&#8322;))
+  x3["x&#8323;"] --> h3((h&#8323;))
+  h1 --> h2 --> h3 --> y["&#375;"]
+</pre>
+          </div>
+          <div class="mermaid-card">
+            <div class="mm-h">One-to-many (captioning)</div>
+<pre class="mermaid">
+flowchart LR
+  x["x"] --> h1((h&#8321;)) --> h2((h&#8322;)) --> h3((h&#8323;))
+  h1 --> y1["&#375;&#8321;"]
+  h2 --> y2["&#375;&#8322;"]
+  h3 --> y3["&#375;&#8323;"]
+</pre>
+          </div>
+          <div class="mermaid-card">
+            <div class="mm-h">Many-to-many synced (POS / NER)</div>
+<pre class="mermaid">
+flowchart LR
+  x1["x&#8321;"] --> h1((h&#8321;)) --> y1["&#375;&#8321;"]
+  x2["x&#8322;"] --> h2((h&#8322;)) --> y2["&#375;&#8322;"]
+  x3["x&#8323;"] --> h3((h&#8323;)) --> y3["&#375;&#8323;"]
+  h1 --> h2 --> h3
+</pre>
+          </div>
+          <div class="mermaid-card">
+            <div class="mm-h">Seq2seq (translation)</div>
+<pre class="mermaid">
+flowchart LR
+  x1["x&#8321;"] --> e1((h&#8321;)) --> e2((h&#8322;)) --> c{{context}}
+  c --> d1((s&#8321;)) --> y1["&#375;&#8321;"]
+  d1 --> d2((s&#8322;)) --> y2["&#375;&#8322;"]
+</pre>
+          </div>
+        </div>
+        <div class="example">
+          <div class="example-h">Example — each layout in the wild</div>
+          <ul>
+            <li><strong>Many-to-one:</strong> a movie review &rarr; one sentiment label (positive / negative).</li>
+            <li><strong>One-to-many:</strong> one image &rarr; a caption "a dog on a couch".</li>
+            <li><strong>Many-to-many (synced):</strong> POS tagging &rarr; "The/DET cat/NOUN sat/VERB".</li>
+            <li><strong>Seq2seq:</strong> translation &rarr; "I am happy" &rarr; "Je suis heureux" (output length differs from input).</li>
+          </ul>
+        </div>
+
+        <div class="callout">
+          <strong>Same cell, different wiring:</strong> all four layouts use one recurrent cell; only <em>where</em> we read inputs and emit outputs changes.
+        </div>
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done><span class="md-icon"></span><span class="md-label">Mark this step as done</span></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev">&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next">Next &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="step4" data-tag="Topic 04" data-title='Forward <span class="hl">Propagation</span>'>
+        <span class="step-pill green">Topic 04</span>
+        <h2>Forward Propagation of RNN<span class="accent-line"></span></h2>
+        <p class="info-text">
+          Forward propagation sweeps <strong>left to right</strong>: starting from <code>h&#8320;</code> (usually zeros), each step
+          computes a hidden state from the previous one and the current token, then an output. Press <strong>Play</strong> to watch the signal flow.
+        </p>
+
+        <div class="viz-wrap">
+          <div class="viz-title">Forward pass — information flows forward in time</div>
+          <div id="d3-forward" class="viz-canvas"></div>
+          <div class="viz-controls">
+            <button class="viz-btn" id="btnForward" type="button">&#9658; Play forward pass</button>
+          </div>
+          <div class="viz-legend">
+            <span><i class="viz-dot" style="background:#a78bfa"></i> currently activating</span>
+            <span><i class="viz-dot" style="background:#4c1d95"></i> hidden state</span>
+            <span><i class="viz-dot" style="background:#6d28d9"></i> output</span>
+          </div>
+        </div>
+
+        <div class="eqn">
+          <span class="c"># for t = 1 … T</span><br>
+          <span class="v">h&#8348;</span> = tanh( W_xh x&#8348; + W_hh h&#8348;&#8331;&#8321; + b&#8341; )<br>
+          <span class="v">&#375;&#8348;</span> = softmax( W_hy h&#8348; + b&#8345; )
+        </div>
+
+        <div class="example">
+          <div class="example-h">Example — predict the next word</div>
+          Vocabulary {cat, sat, mat}. After reading "the cat", the output layer produces logits, softmax turns them into probabilities, and cross-entropy scores the prediction:
+<pre class="eg">logits([cat, sat, mat]) = [1.0, 2.0, 0.1]
+softmax              &#8776; [0.24, <span class="res">0.66</span>, 0.10]      &rarr; predicts "sat" &#10003;
+loss = -ln(0.66)     &#8776; <span class="res">0.42</span>                  <span class="cmt"># low loss: confident &amp; correct</span>
+<span class="cmt"># if "sat" had only 0.24 prob:  -ln(0.24) &#8776; 1.43  (much higher loss)</span></pre>
+          The loss is large when the correct word gets a low probability — and that error is exactly what backward propagation reduces.
+        </div>
+
+        <h3><span class="dot"></span>NumPy implementation</h3>
+        <div class="codeblock-wrap">
+          <span class="cb-label">forward.py</span>
+<pre class="codeblock"><span class="cm-key">import</span> numpy <span class="cm-key">as</span> np
+
+<span class="cm-key">def</span> rnn_forward(X, W_xh, W_hh, W_hy, b_h, b_y, h0=<span class="cm-key">None</span>):
+    T, _ = X.shape
+    H = W_hh.shape[<span class="cm-num">0</span>]
+    h = np.zeros((T + <span class="cm-num">1</span>, H))
+    <span class="cm-key">if</span> h0 <span class="cm-key">is</span> <span class="cm-key">not</span> <span class="cm-key">None</span>: h[<span class="cm-num">0</span>] = h0
+    y = np.zeros((T, W_hy.shape[<span class="cm-num">0</span>]))
+
+    <span class="cm-key">for</span> t <span class="cm-key">in</span> range(T):
+        h[t + <span class="cm-num">1</span>] = np.tanh(X[t] @ W_xh + h[t] @ W_hh + b_h)
+        y[t] = h[t + <span class="cm-num">1</span>] @ W_hy + b_y
+    <span class="cm-key">return</span> y, h   <span class="cm-comment"># keep all h for backprop</span></pre>
+        </div>
+        <div class="callout">
+          <strong>Tip:</strong> Store every <code>h<sub>t</sub></code> during the forward pass — backward propagation needs them to compute gradients.
+        </div>
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done><span class="md-icon"></span><span class="md-label">Mark this step as done</span></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev">&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next">Next &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="step5" data-tag="Topic 05" data-title='Backward <span class="hl">Propagation</span>'>
+        <span class="step-pill">Topic 05</span>
+        <h2>Backward Propagation Through Time (BPTT)<span class="accent-line"></span></h2>
+        <p class="info-text">
+          Training reverses the flow: starting from the loss, gradients travel <strong>right to left</strong> through every
+          time step, accumulating updates for the shared weights. Press <strong>Play</strong> to watch gradients flow backward.
+        </p>
+
+        <div class="viz-wrap">
+          <div class="viz-title">Backward pass — gradients flow backward in time</div>
+          <div id="d3-backward" class="viz-canvas"></div>
+          <div class="viz-controls">
+            <button class="viz-btn" id="btnBackward" type="button">&#9658; Play backward pass</button>
+          </div>
+          <div class="viz-legend">
+            <span><i class="viz-dot" style="background:#dc2626"></i> gradient signal</span>
+            <span><i class="viz-dot" style="background:#4c1d95"></i> hidden state</span>
+          </div>
+        </div>
+
+        <h3><span class="dot"></span>Vanishing / exploding gradients</h3>
+        <p class="info-text">
+          The gradient flowing back to early steps is repeatedly multiplied by <code>W_hh</code> (and tanh slopes). If the
+          effective factor is &lt; 1 it <strong>vanishes</strong>; if &gt; 1 it <strong>explodes</strong>. Drag the slider to see it.
+        </p>
+        <div class="viz-wrap">
+          <div class="viz-title">Gradient magnitude reaching step (t − k)</div>
+          <div id="d3-vanish" class="viz-canvas"></div>
+          <div class="viz-slider">
+            <span>per-step factor &#947;:</span>
+            <input type="range" id="vanishSlider" min="0.3" max="1.3" step="0.05" value="0.6">
+            <span class="sv-val" id="vanishVal">0.60</span>
+            <span id="vanishNote"></span>
+          </div>
+          <div class="viz-cap">Gradient at distance k behaves like &#947;<sup>k</sup>. This is why vanilla RNNs struggle with long-range dependencies — motivating LSTM and GRU.</div>
+        </div>
+
+        <div class="example">
+          <div class="example-h">Example — why long-range memory fails</div>
+          With a per-step factor &#947;, the gradient reaching a token 20 steps back scales like &#947;<sup>20</sup>:
+<pre class="eg">&#947; = 0.5  &rarr;  0.5^20 &#8776; <span class="res">0.000001</span>   <span class="cmt"># vanishes: early tokens barely learn</span>
+&#947; = 1.2  &rarr;  1.2^20 &#8776; <span class="res">38</span>         <span class="cmt"># explodes: huge, unstable updates</span></pre>
+          <strong>Real consequence:</strong> "I grew up in <strong>France</strong> … [40 words] … so I speak fluent ___." The cue (France &rarr; French) is too far back for a vanilla RNN to retain — the core motivation for <strong>LSTM</strong> and <strong>GRU</strong>.
+        </div>
+
+        <h3><span class="dot"></span>NumPy gradient sketch</h3>
+        <div class="codeblock-wrap">
+          <span class="cb-label">bptt.py</span>
+<pre class="codeblock"><span class="cm-comment"># walk t = T-1 down to 0; dh carries gradient back in time</span>
+dW_xh = dW_hh = dW_hy = db_h = db_y = <span class="cm-num">0</span>
+dh_next = np.zeros(H)
+
+<span class="cm-key">for</span> t <span class="cm-key">in</span> reversed(range(T)):
+    dy = y_pred[t] - y_true[t]            <span class="cm-comment"># softmax + cross-entropy</span>
+    dW_hy += np.outer(h[t+<span class="cm-num">1</span>], dy)
+    db_y  += dy
+    dh = dy @ W_hy.T + dh_next            <span class="cm-comment"># from output + future step</span>
+    dz = (<span class="cm-num">1</span> - h[t+<span class="cm-num">1</span>]**<span class="cm-num">2</span>) * dh        <span class="cm-comment"># tanh derivative</span>
+    dW_xh += np.outer(X[t], dz)
+    dW_hh += np.outer(h[t], dz)
+    db_h  += dz
+    dh_next = dz @ W_hh.T                 <span class="cm-comment"># pass gradient to t-1</span></pre>
+        </div>
+        <div class="callout warn">
+          <strong>Why sum?</strong> Because the same <code>W_hh</code> is used at every step, its gradient is the <em>sum</em> of contributions from all time steps.
+        </div>
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done><span class="md-icon"></span><span class="md-label">Mark this step as done</span></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev">&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next">Next &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="step6" data-tag="Topic 06" data-title='PyTorch <span class="hl">Implementation</span>'>
+        <span class="step-pill blue">Topic 06</span>
+        <h2>RNN in PyTorch<span class="accent-line"></span></h2>
+        <p class="info-text">
+          In practice the forward/backward math is handled for you. Here is a complete many-to-one
+          <strong>sentiment classifier</strong>: embed tokens, run an RNN, and classify from the final hidden state.
+        </p>
+        <div class="codeblock-wrap">
+          <span class="cb-label">model.py</span>
+<pre class="codeblock"><span class="cm-key">import</span> torch
+<span class="cm-key">import</span> torch.nn <span class="cm-key">as</span> nn
+
+<span class="cm-key">class</span> RNNClassifier(nn.Module):
+    <span class="cm-key">def</span> __init__(self, vocab, emb=<span class="cm-num">64</span>, hid=<span class="cm-num">128</span>, classes=<span class="cm-num">2</span>):
+        super().__init__()
+        self.embed = nn.Embedding(vocab, emb)
+        self.rnn   = nn.RNN(emb, hid, batch_first=<span class="cm-key">True</span>)
+        self.fc    = nn.Linear(hid, classes)
+
+    <span class="cm-key">def</span> forward(self, x):
+        e = self.embed(x)              <span class="cm-comment"># (B, T, emb)</span>
+        out, h_n = self.rnn(e)         <span class="cm-comment"># out: (B, T, hid)</span>
+        <span class="cm-key">return</span> self.fc(h_n[-<span class="cm-num">1</span>])         <span class="cm-comment"># last hidden -> logits</span>
+
+model = RNNClassifier(vocab=<span class="cm-num">5000</span>)
+x = torch.randint(<span class="cm-num">0</span>, <span class="cm-num">5000</span>, (<span class="cm-num">8</span>, <span class="cm-num">20</span>))  <span class="cm-comment"># batch 8, seq len 20</span>
+logits = model(x)                      <span class="cm-comment"># (8, 2)</span>
+
+loss = nn.CrossEntropyLoss()(logits, torch.zeros(<span class="cm-num">8</span>, dtype=torch.long))
+loss.backward()                        <span class="cm-comment"># autograd runs BPTT for you</span></pre>
+        </div>
+
+        <div class="example">
+          <div class="example-h">Example — follow the tensor shapes</div>
+          For a batch of 8 sentences, each padded to seq_len = 20, with a 5000-word vocab (emb = 64, hid = 128):
+<pre class="eg">x          : (8, 20)          <span class="cmt"># token IDs</span>
+embed(x)   : (8, 20, 64)      <span class="cmt"># each token &rarr; 64-dim vector</span>
+rnn output : (8, 20, 128)     <span class="cmt"># hidden state at every step</span>
+h_n[-1]    : (8, 128)         <span class="cmt"># final hidden state per sentence</span>
+fc(...)    : (<span class="res">8, 2</span>)           <span class="cmt"># 2-class logits per sentence</span></pre>
+          Shape mismatches are the #1 beginner bug — tracing each line above is what makes <code>nn.RNN</code> finally click.
+        </div>
+
+        <div class="grid-3">
+          <div class="mini-card">
+            <div class="mc-label">Embedding</div>
+            <div class="mc-text">Maps token IDs to dense vectors — the <code>x<sub>t</sub></code> fed into the RNN.</div>
+          </div>
+          <div class="mini-card">
+            <div class="mc-label">nn.RNN</div>
+            <div class="mc-text">Runs the forward recurrence; returns all outputs and the final hidden state <code>h_n</code>.</div>
+          </div>
+          <div class="mini-card">
+            <div class="mc-label">loss.backward()</div>
+            <div class="mc-text">Autograd performs BPTT automatically — the same gradients you coded by hand.</div>
+          </div>
+        </div>
+        <div class="callout ok">
+          <strong>Swap-in upgrade:</strong> change <code>nn.RNN</code> to <code>nn.LSTM</code> or <code>nn.GRU</code> to fight vanishing gradients — the rest of the code stays the same.
+        </div>
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done><span class="md-icon"></span><span class="md-label">Mark this step as done</span></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev">&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next">Next &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="conclusion" data-tag="Conclusion" data-title='Session <span class="hl">Conclusion</span>'>
+        <span class="step-pill green">Conclusion</span>
+        <h2>Recap &amp; Next Steps<span class="accent-line"></span></h2>
+        <p class="info-text">
+          You can now explain how RNNs read language, how a forward pass produces predictions, and how BPTT trains the network end to end.
+        </p>
+
+        <div class="conclusion-hero">
+          <img class="ch-logo" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wgARCADIAMgDASIAAhEBAxEB/8QAHQAAAwEAAwEBAQAAAAAAAAAAAAIDAQYHCAUECf/EABsBAAIDAQEBAAAAAAAAAAAAAAECAAMFBAYH/9oADAMBAAIQAxAAAAHp1l33O62rrO7I72uyO9z0m9nRSk3t6K0lS3ppSVLumrze3oqyNZe7I1lz6utYxgTwEw8l81ZkZmdkZrXebvdR5vZfSkqW9FXk9vTakaXdFaRpb0VaT2dFWmz2vqazuKE8D1Tyfzh9TS7sjPZRps9tXk9l9eZ8K7xoXpd+/wDoC7po8X79Czxe3ou8Hsus0We2uy1noTCeEah5T567TYs7TZrKNNntq0nsur6P829s8lPIea/Y6xyuHqT8fqjzvubXw3g2rq3aDWXXaDPZbY6XqSCeHiHl/BvqaWps2Z6NJns5l3fyDsrAzP5/d29Htv7Ppj6/S3cOPnfI5Nw/kyzqbr/0fxjV1OmX/O21sXb8+tZfYazXIhPFRDzXjKCaWdp6zUaTNZ7S5/1/2B5bE/nu0W9f6O3IeNM1nqzgHTvpXK4PucM+R92pPldK804Lta92/Pvb2X2AWuRJOOCnn/Kvs9LU2es1GlrN7X7B697C81kfzvaW+q3rfv8Ao+v+arjfX/o/y3m8XKOpOO/g2dS+xOzrvsNZrkAtciSfEFMPz7iaS+z1jTZ6W9t9h9edh4GZ/OjnHA/VG5p9wfW/N5Wxs7mnmz827+tbY70X2I6zWI6TYiQ2IhnzBNx8hxAx9QLU2esfbXZXin0PlcfjDsPrjdfu5/wWYzV2Q7V2QxqSCakiGxEMsRJPximZwNqaS2ppjiax9CdX+ju5+Gj+bWz3R6X2YTQQYuISOTCKEiSpLJLESSQpwUMYGMLpLC6x+n210loDClhbU0lhAhhCRhCBhMgpiEDiEGGHId1QxtXTN1dM0wY7qhmmBm5gRpmQbmYF0zIuiEDCklAOe0AMNAkAaaAYAGADTAIDAi5gBcwAuAQYAJ//xAAnEAABBAICAgIBBQEAAAAAAAARAAQFBgIDBzABMhA2IBMUFUBgFv/aAAgBAQABBQLs8f2vH+J/5p1lB/2KTcdUfotNFxc+MsfOvL8yiij2V+utLDTmMvI0Z3OVplbGrxlvjnPwUUUUUUUeyD8S0BFsZKMukbvZyVAd564u+Rk3AuoFyUUUUUUUUemu1t1Y3WPFjDHWqTddUZpnKhnq21y56JnxM1R1BOoiej7kys9QcQGZRRRRRRR6eOW2GirZ+nxV7m5r+ctAR90ZwlxdQjmw1DVLKAuH62dqoeTVFFFFFFHp4/8AqOfofmGnHcE60uYnkNhoeyvHr14wir5HQNnd1+S5JhtDLcUUUUUenj/6hn6Iooptv26N9Zsmq3N6gw3xt18ttE9ZLdZfNikCiiiij08ffUM/Qo/DNnvkHNSo+mC8V/H9rZHGzRFx83Y90z5KKKKKKP5n449+n5+nxBQLuwO65WGlbbbdnjTq8zOuDjHr/c/2lFFFFFFHp48+n5+hVTrW2zyMZFNodortftOGnPZlsyKKKKKKKKPTx39Oz9FxJ4w/h3LnUz0XDkLbLIoooooooooo9PG+3HZT8/Qqm2zKrvrPb3dm3ooooooooooo9NOuG6p7seSa/t1fiUUUUUUUUUeltSfNkpO2oTenP5P4FFFFFFFHp4rl9Tuv5+nQUUUUUUemPkXMU618tzOOvsP+n//EACcRAAICAgAFBAIDAAAAAAAAAAABAhEDEgQQICFRIjEyQRMwcYGx/9oACAEDAQE/ARCEIiRIiELoQhCERIiExMsvmhCM08kI7Y1Zw/EQzxuImJiYmWXzQhM4i3FaumRbnO16cn+nDcWsvol2kJikKRsbc0Iy8RPeosnCOWOsjJHX0Zvb6kS+o5v6kYOLlB/iz+/nyKRsbG3OxMyfNiZ2kqZOH4V5h48FRjeOXeNWjhtoYkp+5sbG3OyyfzZZl4hY/wCTHOWTa/sx41Hu/c2NjY26LJ/JmSbjG0QhLIzHFY1SNjY2NjbpnB2PuqYqXZFlmxsbG3Tu4uiyyyyzY2Numkyyyyyyyy/12WX+7//EACoRAAICAgEBBwMFAAAAAAAAAAARAQIDEgQxEBMhIjNBUSBx0TBAQmGR/9oACAECAQE/Ae2CCCCCCP0IIIIII7GP6Yk5F8uOm2KH+DjcmnIrtQiSJIkYx9rGRJy4takaWUvwK2m93XyZY/yTi8yM3kv4X+CJIkYxjGMZyOZl7ya0lRBlx1zV0uZaa+TkdPa35L+1OR19rGDmWpbuuR1+faRjNjYYxjM3q2+4yVaFJkxzx4n+WP4+DWtHit40Tj+jiRemGtcnU2NjYYxjMvqW+4zPyq4YXuYb3zbPxZixRTzW6mxsbGwxjGZPUkz5Jx45mDHivmsYsdcMKozY2NjYYxjMuK28zEFoi0KSqrCgYxjNjYYxjO+tjtMDGMYxjGMfbNa26jGMYxjH+7//xAA8EAACAQEDCQMJCAIDAAAAAAABAgMEAAUREhMhIjFBUWFxEDJAFEJScoKRssHRFSAwM0NgofBisYGS4f/aAAgBAQAGPwL93w3pCM9E2VlqNqYEj3eJju6sAjhxObm3aTvs1ZdYAc6zQDY3NbFWBVhoIO7w9KkwyZlL5Ey7V1jYUV4qZ6A9xxu9X6WFbRSIKhhqyrsfk1mgqIzFKu0Hw0N70Zz9HJjnoOGBw/ps0ZUP6cD95D/d9jUUpNVdjnWU/PgedspThKu/9SI2zVQuqe5IO63gjHBgkafmStsW2vV1DNxXJA/12Jd1aoWnxORMPNx42F63A+bm7+ajOhvV+lvIrwRYKzuFXGrJ/eFvtO4mYZOloBp93EcrNR1carUYa0Lb+a2MqYz0R2Sb16+Bp3Ua0zO7f9sPlY9O0RPjPRHbEfN9W3l93SqlV6Y38mt9m34rjJ0CZtq9eI52F43XIsNZ3w0Z1ZOfXnY3XfaZmq7mVIND8jZ6u7VLw7Wg3r08BQe38bWPT7mfpZMn0kPdbrbNSDM1qDZ56cxxFsxOvlFA50eiea8DysJoXAmAwEo76Hgwt9jXrrqrBFl3rw6i1PWQqI2nJEijeeP49B7fxtY9PupJAzJMDqlNuNpLrvSFWnyeGh/obVNPA5NNBlrK27J3Y/8AOFpr6nYRXRR4BZW2SlfljYMgK0sWrEp/3+PQe38bWPT7iQU8bSyvsVbLUVOE9dx82Pp9bX5eQTLEMrxQxjz5GfVFpYZ58IpHLV1RH36mTfGnLibJHkinootEVNH3V+p8Bd/t/G1j07cxSp68h7qDnbJhGXO35k7bW/8ALPI3dUZRtGG1qyXKnKKdIZ9/LRo9/HRlzNjgMFUaAo4AeBu/2/jax6dmaDZunj1pZOA+tlpqSIRRr7zzPZPd13kTO4KSzeavEDjYsxLMdpPgrv8Ab+NrHp2Vh/Uz+npkjD52eaeRYokGLOx0Cz0l3loaPYz7Gk+g8JRhTpQurdcsn52PTsdmUy0sowkRdvIi2uc1SqdSBTo6nifClZIzNRT6zINo3ZQtiaxoyR3WhfH+B4i66qlKrXRLIuDbJFzjaLFWuup0ejHlD3jxHkWUM/SsdX/EnHH+TZuniFqKSZoJl2MtsloqSQ+k0bY/w370/8QAKBAAAwAABgEDBAMBAAAAAAAAAAERECExQVFhoSCBkTCxwfFx4fDR/9oACAEBAAE/IfQhCEIQhYEIQhCFivQsEIQhCEIQsCEIQiiFhcLihCEIQhCEJiEIQmITwuF9KwQhCYhCYmJiYmJiYmJlKUuNLghCYmITHpcJd5O8muwmJiYmJiYmJiZSlKUuKExMQmJiZ1QkKja61vP55E5Y/Q4+tHt2y+MONuGJiYmJiYmJ+oLhSiYhMTExMmwihn6Xa6HD538ctxy/7seT+1m11Q5fM+7XK7ExMQQXqApcKITExMTExMqmmulNNe2jTfLVG6a8yL8J/Rx4e1deIv8AQjQHKUuA+V4ZmM9Teu+hBBBBekFKUpSiYmZSxNLK/L6Mp/WdF7V9xMySRBuVpeK9dia20KHO3P2PwPTgsJtNR6PsPnITkt4/w06ejGbalv6/lFAQyF7P/ejEEF6x6UpSlExJRMnlpl8KeSExMoAmYz7Nt/Gj8i85FxJ1t6p96/yjPfcyq2/CeRLlQmd1I1p+zklyjPH1Oib+H99oEPPv5rrVfb1oKUpSlExM8M3khBMTEChpmE8IapdK1Tl/31kILVRLk8nyf0ZFOZJ8qLr4YmJd1rTlu1drwIrA3EiPLznn7esGlKUpSlPFN5ITFiFeZt5pekKxXbeRK1fT17QZQ91qW+99hjluZI4LnyZLfJRBXqDur9uL4Xr+pSlKUomeObyWImODtFs3/wAXZWqq7ujv+gll61V0k/HtaO+66h59NZoLTVsVDYjJ2v3PoAKUpSlwU8A3kilE+lLPI8hvxqZI8yHtddPuPxjbOkqzM2UI1Bnq2W9Vp3DNcQiPpsl9EPuNKUpTwjeSwPDiCTX8SXbb34OLwWrybvBKTq5oanJd6LvZj8a1W39IAUpSlKUp4ZvJFJvKnn/YDICEEg/hQZf+MtXvx9QAFKUuFKUvsSnH4JDyWBeO3DN1uq/k3/Zlj/Bfgv1AGUpSlKUpAFTKM8nKTedHGQTHyLyUpSl+mAFKUpSlKU1IKUObZrOPvPp6i9TZ5BFKXBSl+iB0pSlKUopyJ3vbS/JHseYKUpSlKX6YC40pqjDfh8rpiHPo1DfAvGFKUpSlKUpcFL6LjcaUpcKUpSlKUpSlKX10pSlwpSlKUpSl9VLhS430XClwpfWvRfqP0//aAAwDAQACAAMAAAAQucYZumCoVX9GAWtSjzjeJpeD7DDGwVExfY8NJhxtrKSQp4fA8tq8F3Zd1Ubrypu/BHSn6XfsewUs2z3OIt73AllVpcxSS5zgMFdjYZW9aH2SKIEHhx2ICRorZopnAy55EOOzac4doJqqsYxA1rj8jycgehpwAA/9f/8APAPI4/8A/8QAJxEBAAIBAgQHAAMAAAAAAAAAAQARECExIEGh8DBRYYGx0eFxkcH/2gAIAQMBAT8QOAvBRRxxQZcMjjjiijzBgIRRxwDYDqeZrcsHrzOZw3pjuEUWIadiV6tOnv8Ak2Q/LY/T/T8IU17j/nf3wYGC4MUUvqgNSsWkUGryG56Pf4m108vpbzOp1gnR5OTt3TgIMYwYYHVvzhbA2MRgLt1v6jv7mt3vgXYPV8v2Xu0dh7EJMdwYQR1r8wkOjXyfcu2poe319xnf7d/xoaQkz7gwYR1THe5NB+7jyQQZ9y4MGWaFjKNsSrRRCThncuDLi54I4uXLlx3Bwg8H3m5eLixYsfDDGOf/xAAoEQEBAAEBBgUFAQAAAAAAAAABABEhECAxQVFhcYGhsfAwkcHR4fH/2gAIAQIBAT8QIjYUpbClDDsGGGGUpSlKGNhmGGHYGMwOU64OfxZcanE5nzruAkNhmGIbAR4MdGXDp599OXO7jEcPw5fs+yiWLivx8/e1Tc4hCa4Ax9peGns9ZcdfkOJ27Ph2yyjHJ+mXmep6xjT5OQ8fnkxTcghCeoe8UKPIwkGTiuPcfP3aq+cE8A7vT+yIaD/DyI3AIQnqnvFwpr0/uWbywPLVfA5ec5xPZ/eXhoYIhuAQhPWvvcUORY81vvGesU3gCEDkAudJGeRgI8BFN7g2BFxMmWIfQPiDDagcx9ABzDEMMNmzZs2bNnYRGw3Hbm//xAAjEAEAAgEEAwADAQEAAAAAAAABABEhEDFBYSBRcTCR8IGh/9oACAEBAAE/EIZhtDacNZZ0uLE36HHtpcelQYMU2l6hoi1FiOOPaKOOKOOOOOEKKDDUGDFiKOKOOOOOOVRxxxyiLQGoQOgbg06DFUGKOKXRxyr8NVwEEGuNwgwgxRSjQek5I9v3YnMFRmzZRf4qrtSTw4gYMUo0F4VjXCEItg9sIcGwoQ5Vi4A59Cb/AKhxCwGoTGkHIjhGV+f+pBAvAGFIRZFpUasMkIJuNvfYr92U0xjtRKb8t3F7BLsq44aOIgoALBWxgpGqKxRC3OE2TcFjx5fCQQai2gYQvMUDbHcEbZ7oopmyBAwaVobIYzhfrrDcGYBkULQIdAKcCZnBwgkM2eVNs0YRLGlqqdR8rgYtZPiLR4gBB2ho2lIUmEJNQVsIpKrooytNDem0BZd0u3ADhqH+pbAsKwmy5lbTDlkTJXytraFrGQN3ZNHsWRrMOx3XI73F7BtO1tuYTfrLtKu2I2WuAAbncZaHe3MuE+d5Y4M2eA8Gy14AkneEEfUt0EEEEGlCcQTN5Hos/qetGmZNO7zuWbuV8myxgcwKrGHh4MaFcErzCSbYmXbxY/GzR1QLtw6fcGF7Uye+EvlWyicO24qyKttd6Td5P93BZBV7hB3hJJ30/ekkvCDUCuAf1PXgK5patQ3n5N6SkvCSsp3uCwLGrPlitE2ZEs7Kbr3TDyMaw6l0F5F2Xk1u5rbDynlre2RILgfRQKeQBwAbIRTdFuqkkknefc+pSHaEEEkkku4l/U9aoQTc6ccCjkt2rm6gzwlwWCFN8dnLgqI/IehB6t5+nAxB852XD9nJdAhVGFMCJIq8bJwBvanaEEHaW9z7l9J2hBBBoVcS/qeoQaHMubBOVdgMqoAVQhfnBXJMg78VF8ALvBOLD6bYhrZdgi9Uazzs6uscFsQl20YpSlswbo5aC2HeEknfSaf3orCSSSCHci/qeoSTgVezWeB00LVNGGschgN+9N6nYvq1ZnTR6mJ+hiwLIpay8JEKLlnBkAP7MTB8B2tqqd4STjzDt4pcGEEEEEq5l/U9Qi0NkBRobhUS2AFnBLRVplRzuXrK9BQBFotwR2U9WMwcKj8loUmx0tuq5WHaEkneH4P8kkk7whXB/wCp6hJRaZjhW3V/9Y/hRAjlX9VyoERdd5uxJ7X/AAcBRoEEHaEHk99ag9wggkVBqOagP+n/AEn9T1CHFuYBbtkGIpQRFjSPLmkjxi4wcii2hbZJBBBoV0/U+p9z78MPSOZc6B4GKCLZcbqVFBZRiFHsgqbL+kUJINM1ttS0vL6fufWoQQQQRskyi6LmlJhsUKYVNaYaegQ7F0Yz99H3Pvzg+/IJrTTMyRTjpnJc+kXuX/I9fj311n1PqXL7lui5boO0S5DgGncGxOQR5JwVZgNWlh8BLlvEmWX8Pu3RcuoaLrU+p9S4xb34yx9eTCBvQag3pb4haLKaHQYYe0TK+MZbqDqWy5aW6LUYuowxcdC2X4rwPEtS9F0XRaLL0//Z" alt="Programming Hero">
+          <div class="ch-title">Great work — keep building!</div>
+          <div class="ch-sub">Implement a tiny character-level RNN with forward + BPTT in NumPy to lock in the concepts.</div>
+        </div>
+
+        <h3><span class="dot"></span>Key takeaways</h3>
+        <ul class="bare">
+          <li>RNNs model <strong>sequential text</strong> via a hidden state updated at every token with <em>shared</em> weights.</li>
+          <li><strong>Forward propagation</strong> unrolls the cell and computes <code>h<sub>t</sub></code>, <code>ŷ<sub>t</sub></code> left to right.</li>
+          <li><strong>BPTT</strong> sends gradients right to left, summing contributions for the shared weights.</li>
+          <li><strong>Vanishing/exploding gradients</strong> limit long-range memory — LSTM/GRU address this.</li>
+        </ul>
+
+        <div class="example">
+          <div class="example-h">Example — when does order matter?</div>
+          <ul>
+            <li><strong>Bag-of-Words:</strong> ignores order, so "not good" &#8776; "good". &#10007; order, &#10007; memory.</li>
+            <li><strong>Feedforward net:</strong> needs fixed-size input and is still order-agnostic. &#10007; variable length.</li>
+            <li><strong>RNN:</strong> &#10003; order-aware, &#10003; any length, &#10003; short-range memory — long-range is the weak spot (&rarr; LSTM/GRU, then Transformers).</li>
+          </ul>
+        </div>
+
+        <h3><span class="dot"></span>Suggested practice</h3>
+        <ul class="bare">
+          <li>Code vanilla RNN forward + BPTT from scratch on a 5-word sentence; verify with gradient checking.</li>
+          <li>Train the PyTorch <code>RNNClassifier</code> on a small sentiment dataset.</li>
+          <li>Read ahead: LSTM gates and GRU — and how Transformers replace recurrence with attention.</li>
+        </ul>
+
+        <div class="callout ok">
+          <strong>Keep coding!</strong> Understanding RNN mechanics makes LSTMs, GRUs, and Transformers far easier to grasp.
+        </div>
+
+        <div class="page-footer">
+          <button class="mark-done" type="button" data-mark-done><span class="md-icon"></span><span class="md-label">Mark this step as done</span></button>
+          <div class="pf-nav">
+            <button class="pf-btn" type="button" data-nav="prev">&larr; Prev</button>
+            <button class="pf-btn primary" type="button" data-nav="next" disabled>Finish &check;</button>
+          </div>
+        </div>
+      </section>
+
+</div>
+  </main>
+</div>
+
+<div class="bl-toolbar">
+  <button class="laser-toggle" id="laserToggle" type="button" aria-pressed="false" aria-label="Toggle laser pointer" title="Toggle laser pointer (shortcut: L)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3"></circle>
+      <line x1="12" y1="2" x2="12" y2="5"></line>
+      <line x1="12" y1="19" x2="12" y2="22"></line>
+      <line x1="2" y1="12" x2="5" y2="12"></line>
+      <line x1="19" y1="12" x2="22" y2="12"></line>
+    </svg>
+    <span class="lt-label">Laser</span>
+  </button>
+
+  <button class="theme-toggle" id="themeToggle" type="button" role="switch" aria-pressed="false" aria-label="Toggle theme" title="Toggle dark or light theme">
+    <span class="tt-option light">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.2"></circle>
+        <line x1="12" y1="2" x2="12" y2="4"></line>
+        <line x1="12" y1="20" x2="12" y2="22"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="2" y1="12" x2="4" y2="12"></line>
+        <line x1="20" y1="12" x2="22" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      Light
+    </span>
+    <span class="tt-track" aria-hidden="true"><span class="tt-knob"></span></span>
+    <span class="tt-option dark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+      Dark
+    </span>
+  </button>
+
+  <div class="font-control" title="Content font size">
+    <span class="fc-icon" aria-hidden="true">A</span>
+    <input type="range" id="fontScale" min="0.85" max="1.40" step="0.05" value="1.1" aria-label="Content font size">
+    <span class="fc-icon big" aria-hidden="true">A</span>
+    <span class="fc-val" id="fontScaleVal">110%</span>
+  </div>
+</div>
+
+<div id="laserDot" aria-hidden="true"></div>
+
+<div class="author-credit">
+  Prepared by <a href="https://sajjadahmed.com" target="_blank" rel="noopener">Sajjad Ahmed Niloy</a> for <strong>Programming Hero</strong>
+</div>
+
+<script>
+  (function () {
+    const root = document.documentElement;
+    const toggle = document.getElementById('themeToggle');
+    if (!toggle) return;
+    const key = 'ph-class01-rnn-theme';
+    const stored = (() => {
+      try { return localStorage.getItem(key); }
+      catch (_) { return null; }
+    })();
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initial = stored || (prefersDark ? 'dark' : 'light');
+
+    function setTheme(mode) {
+      if (mode === 'dark') root.setAttribute('data-theme', 'dark');
+      else root.removeAttribute('data-theme');
+      try { localStorage.setItem(key, mode); }
+      catch (_) {}
+      toggle.setAttribute('aria-pressed', mode === 'dark' ? 'true' : 'false');
+    }
+
+    setTheme(initial);
+    toggle.addEventListener('click', () => {
+      const isDark = root.getAttribute('data-theme') === 'dark';
+      setTheme(isDark ? 'light' : 'dark');
+    });
+  })();
+
+  const PAGES = ['intro', 'outline', 'step1', 'step2', 'step3', 'step4', 'step5', 'step6', 'conclusion'];
+  const TRACKABLE = PAGES.filter(id => id !== 'intro');
+  const KEY_PAGE = 'ph-class01-rnn-page';
+  const KEY_DONE = 'ph-class01-rnn-done';
+  const KEY_SBW = 'ph-class01-rnn-sidebar-w';
+  const KEY_SBCOL = 'ph-class01-rnn-sidebar-collapsed';
+  const KEY_FONT = 'ph-class01-rnn-font-scale';
+
+  const root = document.documentElement;
+  const layout = document.getElementById('layout');
+  const sidebar = document.getElementById('sidebar');
+  const sbCollapse = document.getElementById('sbCollapse');
+  const sbResize = document.getElementById('sbResize');
+  const contentScroll = document.getElementById('contentScroll');
+  const headerTitle = document.getElementById('headerTitle');
+  const headerTag = document.getElementById('headerTag');
+  const headerProgressFill = document.getElementById('headerProgressFill');
+  const headerProgressText = document.getElementById('headerProgressText');
+  const sidebarProgressFill = document.getElementById('sidebarProgressFill');
+  const sidebarProgressText = document.getElementById('sidebarProgressText');
+
+  function lsGet(key, fallback = null) {
+    try { return localStorage.getItem(key) || fallback; }
+    catch (_) { return fallback; }
+  }
+
+  function lsSet(key, value) {
+    try { localStorage.setItem(key, value); }
+    catch (_) {}
+  }
+
+  let done = new Set();
+  try {
+    const raw = lsGet(KEY_DONE);
+    if (raw) JSON.parse(raw).forEach(id => done.add(id));
+  } catch (_) {
+    done = new Set();
+  }
+
+  function saveDone() {
+    lsSet(KEY_DONE, JSON.stringify(Array.from(done)));
+  }
+
+  function syncSlideProgress(currentId) {
+    const idx = PAGES.indexOf(currentId);
+    const num = idx >= 0 ? idx + 1 : 1;
+    const total = PAGES.length;
+    const pct = (num / total) * 100;
+    headerProgressFill.style.width = pct + '%';
+    headerProgressText.textContent = num + ' / ' + total;
+  }
+
+  function syncProgress() {
+    const total = TRACKABLE.length;
+    const count = TRACKABLE.filter(id => done.has(id)).length;
+    const pct = (count / total) * 100;
+    sidebarProgressFill.style.width = pct + '%';
+    sidebarProgressText.textContent = count + ' / ' + total;
+  }
+
+  function syncDoneUI() {
+    document.querySelectorAll('.step-btn').forEach(btn => {
+      const id = btn.dataset.target;
+      btn.classList.toggle('done', done.has(id));
+    });
+
+    document.querySelectorAll('.page').forEach(page => {
+      const btn = page.querySelector('[data-mark-done]');
+      if (!btn) return;
+      const isDone = done.has(page.id);
+      btn.classList.toggle('done', isDone);
+      const label = btn.querySelector('.md-label');
+      if (label) label.textContent = isDone ? 'Marked as done' : 'Mark this step as done';
+    });
+
+    syncProgress();
+  }
+
+  function syncNavButtons(currentId) {
+    const idx = PAGES.indexOf(currentId);
+    document.querySelectorAll('.page').forEach(page => {
+      const prevBtn = page.querySelector('[data-nav="prev"]');
+      const nextBtn = page.querySelector('[data-nav="next"]');
+      if (prevBtn) prevBtn.disabled = idx <= 0;
+      if (nextBtn) nextBtn.disabled = idx >= PAGES.length - 1;
+    });
+  }
+
+  function activatePage(id, push = true) {
+    if (!PAGES.includes(id)) id = 'intro';
+
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.toggle('active', page.id === id);
+    });
+
+    document.querySelectorAll('.step-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.target === id);
+    });
+
+    const page = document.getElementById(id);
+    if (page) {
+      const title = page.dataset.title || 'Slide Template';
+      const tag = page.dataset.tag || 'Intro';
+      headerTitle.classList.add('title-fade');
+      setTimeout(() => {
+        headerTitle.innerHTML = title;
+        headerTag.textContent = tag;
+        headerTitle.classList.remove('title-fade');
+      }, 160);
+    }
+
+    if (contentScroll) contentScroll.scrollTop = 0;
+    syncSlideProgress(id);
+    syncNavButtons(id);
+    if (push) lsSet(KEY_PAGE, id);
+  }
+
+  document.querySelectorAll('.step-btn').forEach(btn => {
+    btn.addEventListener('click', () => activatePage(btn.dataset.target));
+  });
+
+  document.querySelectorAll('[data-mark-done]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const page = btn.closest('.page');
+      if (!page) return;
+      if (done.has(page.id)) done.delete(page.id);
+      else done.add(page.id);
+      saveDone();
+      syncDoneUI();
+    });
+  });
+
+  document.querySelectorAll('[data-nav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const page = btn.closest('.page');
+      if (!page) return;
+      const idx = PAGES.indexOf(page.id);
+      const next = btn.dataset.nav === 'next' ? idx + 1 : idx - 1;
+      if (next < 0 || next >= PAGES.length) return;
+
+      if (btn.dataset.nav === 'next' && TRACKABLE.includes(page.id) && !done.has(page.id)) {
+        done.add(page.id);
+        saveDone();
+      }
+
+      activatePage(PAGES[next]);
+      syncDoneUI();
+    });
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.target && (/INPUT|TEXTAREA|SELECT/.test(event.target.tagName) || event.target.isContentEditable)) return;
+    const current = document.querySelector('.page.active');
+    if (!current) return;
+    const idx = PAGES.indexOf(current.id);
+    if (event.key === 'ArrowRight' || event.key === 'PageDown') {
+      event.preventDefault();
+      if (idx < PAGES.length - 1) activatePage(PAGES[idx + 1]);
+    } else if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+      event.preventDefault();
+      if (idx > 0) activatePage(PAGES[idx - 1]);
+    }
+  });
+
+  function setCollapsed(value) {
+    layout.classList.toggle('collapsed', value);
+    sbCollapse.setAttribute('aria-pressed', value ? 'true' : 'false');
+    lsSet(KEY_SBCOL, value ? '1' : '0');
+  }
+
+  sbCollapse.addEventListener('click', () => {
+    setCollapsed(!layout.classList.contains('collapsed'));
+  });
+  setCollapsed(lsGet(KEY_SBCOL) === '1');
+
+  const storedWidth = parseInt(lsGet(KEY_SBW, ''), 10);
+  if (storedWidth && storedWidth >= 220 && storedWidth <= 520) {
+    root.style.setProperty('--sidebar-w', storedWidth + 'px');
+  }
+
+  let dragging = false;
+  sbResize.addEventListener('mousedown', event => {
+    if (layout.classList.contains('collapsed')) return;
+    dragging = true;
+    sbResize.classList.add('dragging');
+    document.body.classList.add('resizing');
+    event.preventDefault();
+  });
+
+  window.addEventListener('mousemove', event => {
+    if (!dragging) return;
+    const rect = sidebar.getBoundingClientRect();
+    const next = Math.min(520, Math.max(220, event.clientX - rect.left));
+    root.style.setProperty('--sidebar-w', next + 'px');
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    sbResize.classList.remove('dragging');
+    document.body.classList.remove('resizing');
+    const width = parseInt(getComputedStyle(root).getPropertyValue('--sidebar-w'), 10);
+    if (width) lsSet(KEY_SBW, String(width));
+  });
+
+  (function () {
+    const slider = document.getElementById('fontScale');
+    const value = document.getElementById('fontScaleVal');
+    if (!slider || !value) return;
+    const stored = parseFloat(lsGet(KEY_FONT, ''));
+    const initial = stored && stored >= 0.85 && stored <= 1.40 ? stored : 1.1;
+
+    function apply(scale) {
+      root.style.setProperty('--content-scale', String(scale));
+      value.textContent = Math.round(scale * 100) + '%';
+      slider.value = scale;
+      lsSet(KEY_FONT, String(scale));
+    }
+
+    apply(initial);
+    slider.addEventListener('input', event => apply(parseFloat(event.target.value)));
+  })();
+
+  (function () {
+    const btn = document.getElementById('laserToggle');
+    const dot = document.getElementById('laserDot');
+    if (!btn || !dot) return;
+    const label = btn.querySelector('.lt-label');
+    let active = false;
+    let raf = null, lastX = -100, lastY = -100;
+
+    function render() {
+      dot.style.transform = 'translate(' + lastX + 'px, ' + lastY + 'px)';
+      raf = null;
+    }
+
+    function onMove(event) {
+      lastX = event.clientX;
+      lastY = event.clientY;
+      if (raf === null) raf = requestAnimationFrame(render);
+    }
+
+    function setLaser(on) {
+      active = on;
+      document.body.classList.toggle('laser-active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (label) label.textContent = on ? 'Laser On' : 'Laser';
+      if (on) {
+        window.addEventListener('mousemove', onMove, { passive: true });
+      } else {
+        window.removeEventListener('mousemove', onMove);
+      }
+    }
+
+    btn.addEventListener('click', () => setLaser(!active));
+
+    document.addEventListener('keydown', event => {
+      if (event.target && (/INPUT|TEXTAREA|SELECT/.test(event.target.tagName) || event.target.isContentEditable)) return;
+      if (event.key === 'l' || event.key === 'L') {
+        event.preventDefault();
+        setLaser(!active);
+      } else if (event.key === 'Escape' && active) {
+        setLaser(false);
+      }
+    });
+  })();
+
+  syncDoneUI();
+  const initialPage = lsGet(KEY_PAGE, 'intro');
+  activatePage(initialPage, false);
+  syncSlideProgress(initialPage);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Mermaid: render lazily when a slide becomes visible ---------- */
+  var mermaidReady = false, mermaidDone = {};
+  function initMermaid() {
+    if (mermaidReady || typeof window.mermaid === "undefined") return;
+    try {
+      window.mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "loose",
+        theme: "base",
+        themeVariables: {
+          fontFamily: "Inter, sans-serif",
+          fontSize: "15px",
+          primaryColor: "#ede9fe",
+          primaryTextColor: "#2e1065",
+          primaryBorderColor: "#7c3aed",
+          lineColor: "#7c3aed",
+          secondaryColor: "#ddd6fe",
+          tertiaryColor: "#f5f3ff"
+        }
+      });
+      mermaidReady = true;
+    } catch (e) { /* ignore */ }
+  }
+  function renderMermaidIn(pageId) {
+    if (typeof window.mermaid === "undefined") return;
+    initMermaid();
+    if (mermaidDone[pageId]) return;
+    var page = document.getElementById(pageId);
+    if (!page) return;
+    var blocks = page.querySelectorAll("pre.mermaid:not([data-processed])");
+    if (!blocks.length) { mermaidDone[pageId] = true; return; }
+    try {
+      var p = window.mermaid.run({ nodes: blocks });
+      if (p && p.then) p.catch(function (e) { console.warn("mermaid", e); });
+      mermaidDone[pageId] = true;
+    } catch (e) { console.warn("mermaid", e); }
+  }
+
+  /* ---------- D3 diagrams ---------- */
+  var SUB = { 0: "\u2080", 1: "\u2081", 2: "\u2082", 3: "\u2083", 4: "\u2084" };
+  function sub(n) { return SUB[n] !== undefined ? SUB[n] : String(n); }
+  var COL = { x: "#7c3aed", h: "#4c1d95", y: "#6d28d9", hi: "#a78bfa", red: "#dc2626" };
+  var WORDS = ["The", "cat", "sat", "."];
+  var VIZ = {};
+
+  function build(hostId) {
+    if (typeof d3 === "undefined") return null;
+    var host = document.getElementById(hostId);
+    if (!host) return null;
+    host.innerHTML = "";
+    var T = 4, W = 800, H = 300;
+    var svg = d3.select(host).append("svg")
+      .attr("viewBox", "0 0 " + W + " " + H)
+      .attr("class", "viz-svg-full");
+
+    var defs = svg.append("defs");
+    function mk(id, color) {
+      defs.append("marker").attr("id", id).attr("viewBox", "0 0 10 10")
+        .attr("refX", 9).attr("refY", 5).attr("markerWidth", 7).attr("markerHeight", 7)
+        .attr("orient", "auto-start-reverse")
+        .append("path").attr("d", "M0,0 L10,5 L0,10 z").attr("fill", color);
+    }
+    mk(hostId + "-arr", COL.h);
+    mk(hostId + "-arrRed", COL.red);
+
+    var x0 = 96, dx = 168, yX = 250, yH = 150, yY = 56, r = 25;
+    svg.append("text").attr("x", 24).attr("y", yH + 5).text("h" + sub(0)).attr("font-weight", 700);
+
+    var cells = [];
+    for (var t = 0; t < T; t++) {
+      var cx = x0 + t * dx;
+      var g = svg.append("g");
+
+      var prevx = (t === 0) ? 48 : (x0 + (t - 1) * dx + r);
+      var harrow = g.append("line").attr("x1", prevx).attr("y1", yH).attr("x2", cx - r).attr("y2", yH)
+        .attr("stroke", COL.h).attr("stroke-width", 2).attr("marker-end", "url(#" + hostId + "-arr)");
+
+      g.append("rect").attr("x", cx - 30).attr("y", yX - 22).attr("width", 60).attr("height", 40).attr("rx", 8)
+        .attr("fill", "rgba(124,58,237,0.12)").attr("stroke", COL.x).attr("stroke-width", 1.6);
+      g.append("text").attr("x", cx).attr("y", yX - 3).attr("text-anchor", "middle").attr("font-weight", 700).text("x" + sub(t + 1));
+      g.append("text").attr("x", cx).attr("y", yX + 13).attr("text-anchor", "middle").attr("font-size", 11).attr("opacity", 0.7).text('"' + WORDS[t] + '"');
+
+      var xarrow = g.append("line").attr("x1", cx).attr("y1", yX - 22).attr("x2", cx).attr("y2", yH + r)
+        .attr("stroke", COL.x).attr("stroke-width", 2).attr("marker-end", "url(#" + hostId + "-arr)");
+
+      var hc = g.append("circle").attr("cx", cx).attr("cy", yH).attr("r", r)
+        .attr("fill", "rgba(76,29,149,0.16)").attr("stroke", COL.h).attr("stroke-width", 2);
+      g.append("text").attr("x", cx).attr("y", yH + 5).attr("text-anchor", "middle").attr("font-weight", 700).text("h" + sub(t + 1));
+
+      var yarrow = g.append("line").attr("x1", cx).attr("y1", yH - r).attr("x2", cx).attr("y2", yY + 18)
+        .attr("stroke", COL.y).attr("stroke-width", 2).attr("marker-end", "url(#" + hostId + "-arr)");
+
+      var yb = g.append("rect").attr("x", cx - 26).attr("y", yY - 18).attr("width", 52).attr("height", 36).attr("rx", 8)
+        .attr("fill", "rgba(109,40,217,0.12)").attr("stroke", COL.y).attr("stroke-width", 1.6);
+      g.append("text").attr("x", cx).attr("y", yY + 4).attr("text-anchor", "middle").attr("font-weight", 700).text("\u0177" + sub(t + 1));
+
+      cells.push({ g: g, cx: cx, hc: hc, yb: yb, harrow: harrow, xarrow: xarrow, yarrow: yarrow });
+    }
+    return { svg: svg, cells: cells, id: hostId };
+  }
+
+  function resetCells(state) {
+    if (!state) return;
+    state.cells.forEach(function (c) {
+      c.hc.interrupt().attr("stroke", COL.h).attr("stroke-width", 2).attr("fill", "rgba(76,29,149,0.16)");
+      c.yb.interrupt().attr("stroke", COL.y).attr("stroke-width", 1.6);
+      c.harrow.interrupt().attr("stroke", COL.h).attr("stroke-width", 2);
+      c.g.interrupt().attr("opacity", 1);
+    });
+  }
+
+  function animateBuild(state) {
+    if (!state) return;
+    state.cells.forEach(function (c) { c.g.interrupt().attr("opacity", 0); });
+    var i = 0;
+    (function step() {
+      if (i >= state.cells.length) return;
+      state.cells[i].g.transition().duration(420).attr("opacity", 1);
+      i++;
+      setTimeout(step, 480);
+    })();
+  }
+
+  function animateForward(state) {
+    if (!state) return;
+    resetCells(state);
+    var i = 0;
+    (function step() {
+      if (i >= state.cells.length) return;
+      var c = state.cells[i];
+      c.harrow.transition().duration(220).attr("stroke", COL.hi).attr("stroke-width", 4)
+        .transition().delay(160).duration(320).attr("stroke", COL.h).attr("stroke-width", 2);
+      c.hc.transition().delay(120).duration(260).attr("stroke", COL.hi).attr("stroke-width", 5).attr("fill", "rgba(124,58,237,0.35)")
+        .transition().duration(320).attr("stroke", COL.h).attr("stroke-width", 2).attr("fill", "rgba(76,29,149,0.16)");
+      c.yb.transition().delay(360).duration(260).attr("stroke", COL.hi).attr("stroke-width", 4)
+        .transition().duration(320).attr("stroke", COL.y).attr("stroke-width", 1.6);
+      i++;
+      setTimeout(step, 700);
+    })();
+  }
+
+  function animateBackward(state) {
+    if (!state) return;
+    resetCells(state);
+    var order = state.cells.slice().reverse();
+    var i = 0;
+    (function step() {
+      if (i >= order.length) return;
+      var c = order[i];
+      c.yb.transition().duration(220).attr("stroke", COL.red).attr("stroke-width", 4)
+        .transition().duration(340).attr("stroke", COL.y).attr("stroke-width", 1.6);
+      c.hc.transition().delay(140).duration(260).attr("stroke", COL.red).attr("stroke-width", 5).attr("fill", "rgba(220,38,38,0.22)")
+        .transition().duration(340).attr("stroke", COL.h).attr("stroke-width", 2).attr("fill", "rgba(76,29,149,0.16)");
+      c.harrow.transition().delay(320).duration(260).attr("stroke", COL.red).attr("stroke-width", 4)
+        .transition().duration(340).attr("stroke", COL.h).attr("stroke-width", 2);
+      i++;
+      setTimeout(step, 720);
+    })();
+  }
+
+  function buildVanish(hostId, sliderId, valId, noteId) {
+    if (typeof d3 === "undefined") return;
+    var host = document.getElementById(hostId);
+    if (!host) return;
+    host.innerHTML = "";
+    var W = 640, H = 230, pad = 44, n = 10;
+    var svg = d3.select(host).append("svg").attr("viewBox", "0 0 " + W + " " + H).attr("class", "viz-svg-full");
+    var bw = (W - 2 * pad) / n;
+    var y = d3.scaleLinear().domain([0, 1]).range([H - pad, 22]);
+
+    svg.append("line").attr("x1", pad).attr("y1", H - pad).attr("x2", W - pad).attr("y2", H - pad)
+      .attr("stroke", "#9ca3af").attr("stroke-width", 1);
+
+    function render(factor) {
+      var data = d3.range(n).map(function (k) { return Math.min(1.2, Math.pow(factor, k)); });
+      var color = factor < 1 ? COL.red : (factor > 1 ? "#d97706" : COL.h);
+      var bars = svg.selectAll("rect.bar").data(data);
+      bars.enter().append("rect").attr("class", "bar")
+        .attr("x", function (d, k) { return pad + k * bw + 5; })
+        .attr("width", bw - 10).attr("y", H - pad).attr("height", 0)
+        .merge(bars)
+        .transition().duration(280)
+        .attr("x", function (d, k) { return pad + k * bw + 5; })
+        .attr("width", bw - 10)
+        .attr("y", function (d) { return y(d); })
+        .attr("height", function (d) { return (H - pad) - y(d); })
+        .attr("rx", 3).attr("fill", color).attr("opacity", 0.85);
+
+      var lab = svg.selectAll("text.lab").data(data);
+      lab.enter().append("text").attr("class", "lab")
+        .merge(lab)
+        .attr("x", function (d, k) { return pad + k * bw + bw / 2; })
+        .attr("y", H - pad + 16).attr("text-anchor", "middle").attr("font-size", 10)
+        .attr("fill", "currentColor").attr("opacity", 0.7)
+        .text(function (d, k) { return "k=" + k; });
+    }
+
+    var slider = document.getElementById(sliderId);
+    var val = document.getElementById(valId);
+    var note = document.getElementById(noteId);
+    function upd() {
+      var f = parseFloat(slider.value);
+      if (val) val.textContent = f.toFixed(2);
+      if (note) {
+        note.textContent = f < 1 ? "\u2192 vanishing" : (f > 1 ? "\u2192 exploding" : "\u2192 stable");
+        note.style.color = f < 1 ? "#dc2626" : (f > 1 ? "#d97706" : "#16a34a");
+        note.style.fontWeight = "800";
+      }
+      render(f);
+    }
+    if (slider) { slider.addEventListener("input", upd); upd(); } else { render(0.6); }
+  }
+
+  function bind(id, fn) {
+    var b = document.getElementById(id);
+    if (b) b.addEventListener("click", fn);
+  }
+
+  function initD3() {
+    if (typeof d3 === "undefined") return;
+    VIZ.unroll = build("d3-unroll");
+    VIZ.forward = build("d3-forward");
+    VIZ.backward = build("d3-backward");
+    buildVanish("d3-vanish", "vanishSlider", "vanishVal", "vanishNote");
+    bind("btnUnrollPlay", function () { animateBuild(VIZ.unroll); });
+    bind("btnUnrollReset", function () { resetCells(VIZ.unroll); });
+    bind("btnForward", function () { animateForward(VIZ.forward); });
+    bind("btnBackward", function () { animateBackward(VIZ.backward); });
+  }
+
+  /* ---------- Observe active slide to render mermaid on first view ---------- */
+  function watchSlides() {
+    var inner = document.querySelector(".content-inner");
+    if (!inner) return;
+    var obs = new MutationObserver(function () {
+      var active = document.querySelector(".page.active");
+      if (active) renderMermaidIn(active.id);
+    });
+    obs.observe(inner, { attributes: true, subtree: true, attributeFilter: ["class"] });
+    var a0 = document.querySelector(".page.active");
+    if (a0) renderMermaidIn(a0.id);
+  }
+
+  function start() { initMermaid(); initD3(); watchSlides(); }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+})();
+</script>
+
+</body>
+</html>
